@@ -52,15 +52,16 @@ public class FilesUtil {
 
         if (numberMatcher.find()) {
             baseName = numberMatcher.group(1);
-            number = (Integer.parseInt(numberMatcher.group(2)) + 1);
+            number = (Integer.parseInt(numberMatcher.group(2)));
         } else {
             baseName = withoutExtension;
-            number = 1;
+            number = 0;
         }
 
         Path newPath;
 
         do {
+            ++number;
             newPath = directory.resolve(baseName + number + extension);
         } while (Files.exists(newPath));
 
