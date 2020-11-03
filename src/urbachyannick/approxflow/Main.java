@@ -80,7 +80,7 @@ public class Main implements Runnable {
      * Builds the main class using javac.
      */
     private void buildClass() {
-        runCommand(classpath, "javac", className + ".java");
+        runCommand(classpath, "javac", "-g", className + ".java");
     }
 
     /**
