@@ -89,7 +89,13 @@ public class Main implements Runnable {
      * Builds the main class using javac.
      */
     private void buildClass() {
-        runCommand(classpath, "javac", "-g", className + ".java");
+        runCommand(
+                classpath,
+                "javac",
+                "-classpath", Paths.get("res/jbmc-core-models.jar").toAbsolutePath().toString(),
+                "-g",
+                className + ".java"
+        );
     }
 
     /**
