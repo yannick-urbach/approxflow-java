@@ -57,14 +57,23 @@ public class Main implements Runnable {
         CnfVarLine valLine = getValLine(cnfFile);
         CnfFile renamed = null;
 
+        List<Integer> variables = valLine
+                .getLiterals()
+                .filter(CnfLiteral::isNonTrivial)
+                .boxed()
+                .collect(Collectors.toList());
+
+        if (variables.isEmpty())
+            fail("No variables for which to solve. Information flow might be 0.");
+
         try {
-            renamed = cnfFile.renameVariablesToBottom(valLine.getLiterals().filter(CnfLiteral::isNonTrivial));
+            renamed = cnfFile.renameVariablesToBottom(variables.stream().mapToInt(Integer::intValue));
         } catch (IOException e) {
             fail("Failed to rename variables", e);
             throw new Unreachable();
         }
 
-        int variableCount = (int) valLine.getLiterals().count();
+        int variableCount = variables.size();
 
         addIndLines(renamed, IntStream.range(1, variableCount + 1));
         addCrLines(renamed, IntStream.range(1, variableCount + 1));
