@@ -1,2 +1,1 @@
-mkdir -p out
-javac -d out $(find src -name "*.java")
+mvn clean compile assembly:single

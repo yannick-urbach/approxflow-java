@@ -29,6 +29,9 @@ hs_err_pid*
 /.idea
 /*.iml
 
+# result
+/out/*
+
 # generated during testing
 /test/*.cnf
 /test/*.cnf.scope
