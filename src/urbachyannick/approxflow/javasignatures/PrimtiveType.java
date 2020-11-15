@@ -1,24 +1,29 @@
 package urbachyannick.approxflow.javasignatures;
 
+import org.objectweb.asm.Opcodes;
+
 import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public enum PrimtiveType implements TypeSpecifier {
-    VOID('V', null, 0),
-    BOOLEAN('Z', 'z', 1),
-    BYTE('B', 'b', 1),
-    SHORT('S', 's', 1),
-    INT('I', 'i', 1),
-    LONG('J', 'l', 2),
-    FLOAT('F', 'f', 1),
-    DOUBLE('D', 'd', 2),
-    CHAR('C', 'c', 1),
-    ADDRESS(null, 'a', 1); // weird
+    VOID("Void", 'V', null, 0, false, Opcodes.RETURN),
+    BOOLEAN("Boolean", 'Z', 'z', 1, true, Opcodes.IRETURN),
+    BYTE("Byte", 'B', 'b', 1, true, Opcodes.IRETURN),
+    SHORT("Short", 'S', 's', 1, true, Opcodes.IRETURN),
+    INT("Int", 'I', 'i', 1, true, Opcodes.IRETURN),
+    LONG("Long", 'J', 'l', 2, true, Opcodes.LRETURN),
+    FLOAT("Float", 'F', 'f', 1, true, Opcodes.FRETURN),
+    DOUBLE("Double", 'D', 'd', 2, true, Opcodes.DRETURN),
+    CHAR("Char", 'C', 'c', 1, true, Opcodes.IRETURN),
+    ADDRESS(null, null, 'a', 1, false, Opcodes.ARETURN); // weird
 
     private final Character baseType;
     private final Character variableNamePostfix;
     private final int stackSlots;
+    private final boolean primitive;
+    private final String name;
+    private final int returnOpcode;
     private static final Map<Character, PrimtiveType> baseTypeMap;
     private static final Map<Character, PrimtiveType> variableNamePostfixMap;
 
@@ -34,10 +39,13 @@ public enum PrimtiveType implements TypeSpecifier {
                 .collect(Collectors.toMap(t -> t.variableNamePostfix, t -> t));
     }
 
-    PrimtiveType(Character baseType, Character variableNamePostfix, int stackSlots) {
+    PrimtiveType(String name, Character baseType, Character variableNamePostfix, int stackSlots, boolean primitive, int returnOpcode) {
         this.baseType = baseType;
         this.variableNamePostfix = variableNamePostfix;
         this.stackSlots = stackSlots;
+        this.primitive = primitive;
+        this.name = name;
+        this.returnOpcode = returnOpcode;
     }
 
     public static PrimtiveType tryParseFromTypeSpecifier(String input, MutableInteger offset) {
@@ -70,7 +78,20 @@ public enum PrimtiveType implements TypeSpecifier {
         return this;
     }
 
+    @Override
+    public boolean isPrimitive() {
+        return primitive;
+    }
+
     public String asVariableNamePostfix() {
         return Character.toString(variableNamePostfix);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public int getReturnOpcode() {
+        return returnOpcode;
     }
 }

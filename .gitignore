@@ -39,3 +39,4 @@ hs_err_pid*
 
 # do not ignore
 !/res/jbmc-core-models.jar
+!/res/urbachyannick/approxflow/*.class

@@ -57,6 +57,11 @@ public class ClassName implements TypeSpecifier {
     }
 
     @Override
+    public boolean isPrimitive() {
+        return false;
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (!(o instanceof ClassName))
             return false;

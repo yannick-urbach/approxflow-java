@@ -1,6 +1,8 @@
 package urbachyannick.approxflow;
 
 import picocli.CommandLine;
+import urbachyannick.approxflow.codetransformation.InvalidTransformationException;
+import urbachyannick.approxflow.codetransformation.ReturnValueInput;
 import urbachyannick.approxflow.javasignatures.ClassName;
 import urbachyannick.approxflow.javasignatures.FieldAccess;
 import urbachyannick.approxflow.javasignatures.ParsedSignature;
@@ -55,6 +57,7 @@ public class Main implements Runnable {
         classpath = classpath.toAbsolutePath();
 
         buildClass();
+        transformBytecode();
 
         CnfFile cnfFile = generateCnf();
         CnfVarLine valLine = getValLine(cnfFile);
@@ -92,13 +95,25 @@ public class Main implements Runnable {
      * Builds the main class using javac.
      */
     private void buildClass() {
+        Path resPath = Paths.get("res").toAbsolutePath();
+
         runCommand(
                 classpath,
                 "javac",
-                "-classpath", Paths.get("res/jbmc-core-models.jar").toAbsolutePath().toString(),
+                "-classpath", resPath.resolve("jbmc-core-models.jar").toString() + ":" + resPath.toString(),
                 "-g",
                 className + ".java"
         );
+    }
+
+    private void transformBytecode() {
+        Path classFilePath = classpath.resolve(className + ".class");
+
+        try {
+            new ReturnValueInput().apply(classFilePath);
+        } catch (IOException | InvalidTransformationException e) {
+            fail("Failed to transform bytecode", e);
+        }
     }
 
     /**

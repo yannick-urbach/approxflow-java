@@ -5,6 +5,7 @@ import java.text.ParseException;
 public interface TypeSpecifier {
     String asTypeSpecifierString();
     PrimtiveType asPrimitive();
+    boolean isPrimitive();
 
     static TypeSpecifier parse(String input, MutableInteger inoutOffset) throws ParseException {
         TypeSpecifier type = PrimtiveType.tryParseFromTypeSpecifier(input, inoutOffset);

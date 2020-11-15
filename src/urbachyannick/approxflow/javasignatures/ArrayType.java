@@ -46,6 +46,11 @@ public class ArrayType implements TypeSpecifier {
     }
 
     @Override
+    public boolean isPrimitive() {
+        return false;
+    }
+
+    @Override
     public int hashCode() {
         return Objects.hash(ArrayType.class.hashCode(), elementType); // to prevent A and A[] from having the same hash code
     }
