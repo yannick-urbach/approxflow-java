@@ -21,9 +21,9 @@ public class VariableIndices {
 
     public static VariableIndices parse(String input, MutableInteger inoutOffset) throws ParseException {
         input = input + " "; // sentinel
-        int thread = 0;
-        int instance = 0;
-        int generation = 0;
+        int thread = -1;
+        int instance = -1;
+        int generation = -1;
         MutableInteger offset = new MutableInteger(inoutOffset);
 
         if (input.charAt(offset.get()) == '!')
@@ -60,6 +60,10 @@ public class VariableIndices {
 
     @Override
     public String toString() {
-        return String.format("!%d@%d#%d", thread, instance, generation);
+        return (
+                (thread >= 0 ? "!" + thread : "") +
+                (instance >= 0 ? "@" + instance : "") +
+                (generation >= 0 ? "#" + generation : "")
+        );
     }
 }

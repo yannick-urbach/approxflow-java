@@ -1,6 +1,7 @@
 package urbachyannick.approxflow.javasignatures;
 
 import java.text.ParseException;
+import java.util.Objects;
 
 public class ArrayType implements TypeSpecifier {
     private final TypeSpecifier elementType;
@@ -42,5 +43,18 @@ public class ArrayType implements TypeSpecifier {
     @Override
     public PrimtiveType asPrimitive() {
         return PrimtiveType.ADDRESS;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(ArrayType.class.hashCode(), elementType); // to prevent A and A[] from having the same hash code
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof ArrayType))
+            return false;
+
+        return ((ArrayType) o).elementType.equals(elementType);
     }
 }

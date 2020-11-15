@@ -4,6 +4,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class FunctionCall extends MemberAccess {
@@ -71,6 +72,26 @@ public class FunctionCall extends MemberAccess {
                         .collect(Collectors.joining()),
                 returnType.asTypeSpecifierString(),
                 variable.toString()
+        );
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, Arrays.hashCode(parameterTypes), returnType, variable);
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (!(other instanceof FunctionCall))
+            return false;
+
+        FunctionCall o = (FunctionCall) other;
+
+        return (
+                name.equals(o.name) &&
+                Arrays.equals(parameterTypes, o.parameterTypes) &&
+                returnType.equals(o.returnType) &&
+                variable.equals(o.variable)
         );
     }
 }

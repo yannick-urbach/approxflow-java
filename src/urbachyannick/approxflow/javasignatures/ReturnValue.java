@@ -13,4 +13,14 @@ public class ReturnValue extends FunctionCallVariable {
     public String toString() {
         return "#return_value";
     }
+
+    @Override
+    public int hashCode() {
+        return ReturnValue.class.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof ReturnValue;
+    }
 }

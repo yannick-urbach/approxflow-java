@@ -27,4 +27,17 @@ public class FieldAccess extends MemberAccess {
     public String toString() {
         return "." + name;
     }
+
+    @Override
+    public int hashCode() {
+        return name.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof FieldAccess))
+            return false;
+
+        return ((FieldAccess) o).name.equals(name);
+    }
 }

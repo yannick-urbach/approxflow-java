@@ -13,6 +13,12 @@ public class ParsedSignature extends Signature {
         this.indices = indices;
     }
 
+    public ParsedSignature(ClassName className, MemberAccess memberAccess) {
+        this.className = className;
+        this.memberAccess = memberAccess;
+        this.indices = new VariableIndices(-1, -1, -1);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof ParsedSignature))
@@ -29,6 +35,15 @@ public class ParsedSignature extends Signature {
 
     public VariableIndices getIndices() {
         return indices;
+    }
+
+    public boolean matches(Signature other) {
+        if (!(other instanceof ParsedSignature))
+            return false;
+
+        ParsedSignature o = (ParsedSignature) other;
+
+        return className.equals(o.className) && memberAccess.equals(o.memberAccess);
     }
 
     @Override

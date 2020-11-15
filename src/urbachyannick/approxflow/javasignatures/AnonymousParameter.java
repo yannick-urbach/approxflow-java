@@ -1,9 +1,10 @@
 package urbachyannick.approxflow.javasignatures;
 
 import java.text.ParseException;
+import java.util.Objects;
 
 public class AnonymousParameter extends FunctionCallVariable {
-    int stackSlot; // not really an index; stack slot?
+    int stackSlot;
     PrimtiveType type;
 
     public AnonymousParameter(int stackSlot, PrimtiveType type) {
@@ -35,5 +36,23 @@ public class AnonymousParameter extends FunctionCallVariable {
     @Override
     public String toString() {
         return "::arg" + stackSlot + type.asVariableNamePostfix();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(stackSlot, type);
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (!(other instanceof AnonymousLocal))
+            return false;
+
+        AnonymousLocal o = (AnonymousLocal) other;
+
+        return (
+                type.equals(o.type) &&
+                stackSlot == o.stackSlot
+        );
     }
 }

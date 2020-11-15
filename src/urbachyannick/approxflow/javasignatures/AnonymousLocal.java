@@ -1,6 +1,6 @@
 package urbachyannick.approxflow.javasignatures;
 
-import java.text.ParseException;
+import java.util.Objects;
 
 public class AnonymousLocal extends FunctionCallVariable {
     int stackSlot;
@@ -33,5 +33,23 @@ public class AnonymousLocal extends FunctionCallVariable {
     @Override
     public String toString() {
         return "::anonlocal::" + stackSlot + type.asVariableNamePostfix();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(stackSlot, type);
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (!(other instanceof AnonymousLocal))
+            return false;
+
+        AnonymousLocal o = (AnonymousLocal) other;
+
+        return (
+                type.equals(o.type) &&
+                stackSlot == o.stackSlot
+        );
     }
 }

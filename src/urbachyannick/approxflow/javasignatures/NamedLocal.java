@@ -48,4 +48,17 @@ public class NamedLocal extends FunctionCallVariable {
     public String toString() {
         return "::" + name;
     }
+
+    @Override
+    public int hashCode() {
+        return name.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof NamedLocal))
+            return false;
+
+        return ((NamedLocal) o).name.equals(name);
+    }
 }

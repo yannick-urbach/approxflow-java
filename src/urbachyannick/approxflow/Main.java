@@ -1,6 +1,9 @@
 package urbachyannick.approxflow;
 
 import picocli.CommandLine;
+import urbachyannick.approxflow.javasignatures.ClassName;
+import urbachyannick.approxflow.javasignatures.FieldAccess;
+import urbachyannick.approxflow.javasignatures.ParsedSignature;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -142,12 +145,12 @@ public class Main implements Runnable {
      */
     private CnfVarLine getValLine(CnfFile cnfFile) {
         try {
-            String signature = "java::" + className + ".___val";
+            ParsedSignature signature = new ParsedSignature(new ClassName(className), new FieldAccess("___val"));
 
             return cnfFile
                     .getVarLines()
-                    .filter(line -> signature.equals(line.getSignature()))
-                    .max(CnfVarLine::compareByIndex)
+                    .filter(line -> signature.matches(line.getSignature()))
+                    .max(CnfVarLine::compareByGeneration)
                     .orElseThrow(() -> new CnfException("missing variable line for ___val"));
 
         } catch (IOException | CnfException e) {
@@ -288,7 +291,7 @@ public class Main implements Runnable {
             process.waitFor();
 
             if (process.exitValue() != 0)
-                fail(command.stream().findFirst().orElse("command") + "returned error code " + process.exitValue());
+                fail(command.stream().findFirst().orElse("command") + " returned error code " + process.exitValue());
         } catch (IOException | InterruptedException e) {
             fail("Failed to run " + command.stream().findFirst().orElse("command"));
         }
