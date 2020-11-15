@@ -1,6 +1,7 @@
 package urbachyannick.approxflow;
 
 import picocli.CommandLine;
+import urbachyannick.approxflow.codetransformation.AddDummyThrow;
 import urbachyannick.approxflow.codetransformation.InvalidTransformationException;
 import urbachyannick.approxflow.codetransformation.ReturnValueInput;
 import urbachyannick.approxflow.javasignatures.ClassName;
@@ -111,6 +112,7 @@ public class Main implements Runnable {
 
         try {
             new ReturnValueInput().apply(classFilePath);
+            new AddDummyThrow().apply(classFilePath);
         } catch (IOException | InvalidTransformationException e) {
             fail("Failed to transform bytecode", e);
         }
