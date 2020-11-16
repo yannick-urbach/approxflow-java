@@ -3,9 +3,8 @@ package urbachyannick.approxflow;
 import picocli.CommandLine;
 import urbachyannick.approxflow.codetransformation.AddDummyThrow;
 import urbachyannick.approxflow.codetransformation.InvalidTransformationException;
+import urbachyannick.approxflow.codetransformation.OutputVariable;
 import urbachyannick.approxflow.codetransformation.ReturnValueInput;
-import urbachyannick.approxflow.javasignatures.ClassName;
-import urbachyannick.approxflow.javasignatures.FieldAccess;
 import urbachyannick.approxflow.javasignatures.ParsedSignature;
 
 import java.io.*;
@@ -61,12 +60,11 @@ public class Main implements Runnable {
         transformBytecode();
 
         CnfFile cnfFile = generateCnf();
-        CnfVarLine valLine = getValLine(cnfFile);
         CnfFile renamed = null;
 
-        List<Integer> variables = valLine
-                .getLiterals()
+        List<Integer> variables = getRelevantVariables(cnfFile)
                 .filter(CnfLiteral::isNonTrivial)
+                .distinct()
                 .boxed()
                 .collect(Collectors.toList());
 
@@ -154,24 +152,31 @@ public class Main implements Runnable {
         }
     }
 
-    /**
-     * Finds the variable line for the static ___val variable in a CNF file.
-     *
-     * @param cnfFile the CNF file in which to search
-     * @return the variable line
-     */
-    private CnfVarLine getValLine(CnfFile cnfFile) {
-        try {
-            ParsedSignature signature = new ParsedSignature(new ClassName(className), new FieldAccess("___val"));
+    private IntStream getRelevantVariables(CnfFile cnfFile) {
+        Path classFilePath = classpath.resolve(className + ".class");
 
+        try {
+            return new OutputVariable().scan(classFilePath)
+                    .flatMapToInt(s -> getVariablesForSignature(cnfFile, s));
+        } catch (IOException e) {
+            fail("Failed to scan bytecode for outputs");
+            throw new Unreachable();
+        }
+    }
+
+    private IntStream getVariablesForSignature(CnfFile cnfFile, ParsedSignature signature) {
+        try {
             return cnfFile
                     .getVarLines()
                     .filter(line -> signature.matches(line.getSignature()))
                     .max(CnfVarLine::compareByGeneration)
-                    .orElseThrow(() -> new CnfException("missing variable line for ___val"));
-
-        } catch (IOException | CnfException e) {
-            fail("Failed to get ___val line", e);
+                    .orElseThrow(() -> new CnfException("missing variable line for " + signature.toString()))
+                    .getLiterals();
+        } catch (CnfException e) {
+            System.err.println("Can not find variable line for " + signature.toString());
+            return IntStream.empty();
+        } catch (IOException e) {
+            fail("Failed to scan CNF file for variables");
             throw new Unreachable();
         }
     }
