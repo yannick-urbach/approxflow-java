@@ -2,6 +2,7 @@ package urbachyannick.approxflow.codetransformation;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 import urbachyannick.approxflow.FilesUtil;
 
@@ -14,8 +15,8 @@ public abstract class Transformation {
     public abstract void apply(ClassNode sourceClass, ClassNode targetClass) throws IOException, InvalidTransformationException;
 
     public void apply(Path input, Path output) throws IOException, InvalidTransformationException {
-        ClassNode sourceClass = new ClassNode();
-        ClassNode targetClass = new ClassNode();
+        ClassNode sourceClass = new ClassNode(Opcodes.ASM5); // Java 8
+        ClassNode targetClass = new ClassNode(Opcodes.ASM5); // Java 8
 
         InputStream inputStream = Files.newInputStream(input);
         ClassReader reader = new ClassReader(inputStream);
