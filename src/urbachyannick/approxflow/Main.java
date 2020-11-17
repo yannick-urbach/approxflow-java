@@ -1,10 +1,7 @@
 package urbachyannick.approxflow;
 
 import picocli.CommandLine;
-import urbachyannick.approxflow.codetransformation.AddDummyThrow;
-import urbachyannick.approxflow.codetransformation.InvalidTransformationException;
-import urbachyannick.approxflow.codetransformation.OutputVariable;
-import urbachyannick.approxflow.codetransformation.ReturnValueInput;
+import urbachyannick.approxflow.codetransformation.*;
 import urbachyannick.approxflow.javasignatures.ParsedSignature;
 
 import java.io.*;
@@ -109,6 +106,7 @@ public class Main implements Runnable {
         Path classFilePath = classpath.resolve(className + ".class");
 
         try {
+            new MethodOfInterestTransform().apply(classFilePath);
             new ReturnValueInput().apply(classFilePath);
             new AddDummyThrow().apply(classFilePath);
         } catch (IOException | InvalidTransformationException e) {

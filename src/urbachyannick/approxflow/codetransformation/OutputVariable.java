@@ -1,14 +1,13 @@
 package urbachyannick.approxflow.codetransformation;
 
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
 import urbachyannick.approxflow.Unreachable;
 import urbachyannick.approxflow.javasignatures.*;
 
 import java.text.ParseException;
-import java.util.List;
 import java.util.stream.Stream;
+import static urbachyannick.approxflow.codetransformation.BytecodeUtil.*;
 
 public class OutputVariable extends Scanner<Stream<ParsedSignature>> {
 
@@ -36,17 +35,5 @@ public class OutputVariable extends Scanner<Stream<ParsedSignature>> {
                             throw new Unreachable();
                         }
                 });
-    }
-
-    private static boolean hasFlag(int value, int flag) {
-        return (value & flag) != 0;
-    }
-
-    private static boolean hasAnnotation(List<AnnotationNode> annotations, String name) {
-        if (annotations == null)
-            return false;
-
-        return annotations.stream()
-                .anyMatch(a -> a.desc.equals(name));
     }
 }

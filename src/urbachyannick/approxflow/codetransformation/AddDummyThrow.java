@@ -5,6 +5,8 @@ import org.objectweb.asm.tree.*;
 
 import java.io.IOException;
 
+import static urbachyannick.approxflow.codetransformation.BytecodeUtil.*;
+
 /**
  * Adds an assert(false) before every return statement in the main method to force jbmc to output a cnf file.
  * For some reason this doesn't seem to work if externalized into a method.
@@ -25,24 +27,14 @@ public class AddDummyThrow extends Transformation {
     @Override
     public void apply(ClassNode sourceClass, ClassNode targetClass) throws IOException, InvalidTransformationException {
         sourceClass.accept(targetClass); // copy over
-
-        targetClass.methods.stream()
-                .filter(m -> m.name.equals("main") && m.desc.equals("([Ljava/lang/String;)V"))
-                .forEach(this::addDummyThrow);
+        findMainMethod(targetClass).ifPresent(this::addDummyThrow);
     }
 
     private void addDummyThrow(MethodNode method) {
         InsnList body = method.instructions;
 
-        for (AbstractInsnNode n = body.getFirst(); n != body.getLast(); n = n.getNext()) {
+        for (AbstractInsnNode n = body.getFirst(); n != null; n = n.getNext()) {
             if (n.getOpcode() == Opcodes.RETURN) {
-                method.instructions.insertBefore(n, new MethodInsnNode(
-                        Opcodes.INVOKESTATIC,
-                        "urbachyannick.approxflow.Util",
-                        "dummyThrow",
-                        "()V"
-                ));
-
                 method.instructions.insertBefore(n, dummyThrow);
             }
         }
