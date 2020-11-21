@@ -30,12 +30,7 @@ public class ReturnValueInput extends Transformation {
             if (!hasPrivateInputAnnotation)
                 continue;
 
-            TypeSpecifier returnType = null;
-            try {
-                returnType = TypeSpecifier.parse(Type.getReturnType(sourceMethod.desc).getDescriptor(), new MutableInteger(0));
-            } catch (ParseException e) {
-                throw new Unreachable();
-            }
+            TypeSpecifier returnType = TypeSpecifier.parse(Type.getReturnType(sourceMethod.desc).getDescriptor(), new MutableInteger(0));
 
             if (!returnType.isPrimitive())
                 throw new InvalidTransformationException("Private inputs must be of primitive types (for now).");

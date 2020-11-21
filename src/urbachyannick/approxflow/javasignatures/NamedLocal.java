@@ -16,23 +16,22 @@ public class NamedLocal extends FunctionCallVariable {
         this.mysteryNumber = mysteryNumber;
     }
 
-    public static NamedLocal tryParse(String input, MutableInteger inoutOffset) throws ParseException {
+    public static NamedLocal tryParse(String input, MutableInteger inoutOffset) {
         MutableInteger offset = new MutableInteger(inoutOffset);
 
-        if (input.charAt(offset.get()) != ':' || input.charAt(offset.get() + 1) != ':')
+        if (!ParseUtil.checkConstant(input, "::", offset))
             return null;
 
-        offset.add(2);
         MutableInteger beforeNumber = new MutableInteger(offset);
 
-        Integer mysteryNumber = ParseUtil.tryParseNumber(input, offset);
+        Long mysteryNumber = ParseUtil.tryParseNumber(input, offset);
 
         if (mysteryNumber == null) {
-            mysteryNumber = 0;
-        } else if (input.charAt(offset.get()) != ':' || input.charAt(offset.get() + 1) != ':') {
+            mysteryNumber = 0L;
+        } else if (!ParseUtil.checkConstant(input, "::", offset)) {
             // actually part of the name (is that possible? probably not...)
             offset = beforeNumber;
-            mysteryNumber = 0;
+            mysteryNumber = 0L;
         } else {
             // is mystery number
             offset.add(2);
@@ -41,7 +40,7 @@ public class NamedLocal extends FunctionCallVariable {
         String name = Identifiers.parseUnqualified(input, offset);
 
         inoutOffset.set(offset.get());
-        return new NamedLocal(name, mysteryNumber);
+        return new NamedLocal(name, mysteryNumber.intValue());
     }
 
     @Override

@@ -13,11 +13,10 @@ public class AnonymousParameter extends FunctionCallVariable {
     }
 
     public static AnonymousParameter tryParse(String input, MutableInteger inoutOffset) {
-        if (!input.regionMatches(inoutOffset.get(), "::arg", 0, 5))
+        if (!ParseUtil.checkConstant(input, "::arg", inoutOffset))
             return null;
 
-        inoutOffset.add(5); // "::arg".length()
-        Integer stackSlot = ParseUtil.tryParseNumber(input, inoutOffset);
+        Long stackSlot = ParseUtil.tryParseNumber(input, inoutOffset);
 
         if (stackSlot == null)
             return null;
@@ -30,7 +29,7 @@ public class AnonymousParameter extends FunctionCallVariable {
         if (inoutOffset.get() < input.length() && Character.isJavaIdentifierPart(input.charAt(inoutOffset.get())))
             return null;
 
-        return new AnonymousParameter(stackSlot, type);
+        return new AnonymousParameter(stackSlot.intValue(), type);
     }
 
     @Override

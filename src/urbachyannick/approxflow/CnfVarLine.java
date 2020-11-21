@@ -1,6 +1,6 @@
 package urbachyannick.approxflow;
 
-import urbachyannick.approxflow.javasignatures.ParsedSignature;
+import urbachyannick.approxflow.javasignatures.JavaSignature;
 import urbachyannick.approxflow.javasignatures.Signature;
 import urbachyannick.approxflow.javasignatures.UnparsedSignature;
 
@@ -78,8 +78,8 @@ public class CnfVarLine {
             return 0;
 
         return Integer.compare(
-                ((ParsedSignature)left.getSignature()).getIndices().getGeneration(),
-                ((ParsedSignature)right.getSignature()).getIndices().getGeneration()
+                ((JavaSignature)left.getSignature()).getIndices().getGeneration(),
+                ((JavaSignature)right.getSignature()).getIndices().getGeneration()
         );
     }
 

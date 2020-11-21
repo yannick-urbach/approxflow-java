@@ -43,65 +43,61 @@ public class MethodOfInterestTransform extends Transformation {
         MethodNode main = new MethodNode(Opcodes.ASM5, Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC, "main", "([Ljava/lang/String;)V", null, null);
         targetClass.methods.add(main);
 
-        try {
-            // add nondet*() calls for parameters
-            for (Type t : Type.getArgumentTypes(method.desc)) {
-                TypeSpecifier s = TypeSpecifier.parse(t.getDescriptor(), new MutableInteger(0));
+        // add nondet*() calls for parameters
+        for (Type t : Type.getArgumentTypes(method.desc)) {
+            TypeSpecifier s = TypeSpecifier.parse(t.getDescriptor(), new MutableInteger(0));
 
-                if (!s.isPrimitive())
-                    throw new InvalidTransformationException("Method of interest must only have primitive parameters");
+            if (!s.isPrimitive())
+                throw new InvalidTransformationException("Method of interest must only have primitive parameters");
 
-                main.instructions.add(
-                        new MethodInsnNode(
-                                Opcodes.INVOKESTATIC,
-                                "org/cprover/CProver",
-                                "nondet" + s.asPrimitive().getName(),
-                                "()" + s.asTypeSpecifierString()
-                        )
-                );
-            }
-
-            // add call to method of interest
             main.instructions.add(
                     new MethodInsnNode(
                             Opcodes.INVOKESTATIC,
-                            targetClass.name,
-                            method.name,
-                            method.desc
+                            "org/cprover/CProver",
+                            "nondet" + s.asPrimitive().getName(),
+                            "()" + s.asTypeSpecifierString()
                     )
             );
-
-            // add output variable for return value (will be picked up by OutputVariable scanner)
-            TypeSpecifier returnType = TypeSpecifier.parse(Type.getReturnType(method.desc).getDescriptor(), new MutableInteger(0));
-
-            if (!returnType.isPrimitive())
-                throw new InvalidTransformationException("Method of interest must have a primitive return type");
-
-            FieldNode field = new FieldNode(
-                    Opcodes.ASM5,
-                    Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC,
-                    "___val",
-                    returnType.asTypeSpecifierString(),
-                    null,
-                    null
-            );
-
-            field.visibleAnnotations = new ArrayList<>();
-            field.visibleAnnotations.add(new AnnotationNode(Opcodes.ASM5, "Lurbachyannick/approxflow/PublicOutput;"));
-            targetClass.fields.add(field);
-
-            // add assignment to output variable
-            main.instructions.add(
-                    new FieldInsnNode(
-                            Opcodes.PUTSTATIC,
-                            targetClass.name,
-                            "___val",
-                            returnType.asTypeSpecifierString()
-                    )
-            );
-        } catch (ParseException e) {
-            throw new Unreachable();
         }
+
+        // add call to method of interest
+        main.instructions.add(
+                new MethodInsnNode(
+                        Opcodes.INVOKESTATIC,
+                        targetClass.name,
+                        method.name,
+                        method.desc
+                )
+        );
+
+        // add output variable for return value (will be picked up by OutputVariable scanner)
+        TypeSpecifier returnType = TypeSpecifier.parse(Type.getReturnType(method.desc).getDescriptor(), new MutableInteger(0));
+
+        if (!returnType.isPrimitive())
+            throw new InvalidTransformationException("Method of interest must have a primitive return type");
+
+        FieldNode field = new FieldNode(
+                Opcodes.ASM5,
+                Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC,
+                "___val",
+                returnType.asTypeSpecifierString(),
+                null,
+                null
+        );
+
+        field.visibleAnnotations = new ArrayList<>();
+        field.visibleAnnotations.add(new AnnotationNode(Opcodes.ASM5, "Lurbachyannick/approxflow/PublicOutput;"));
+        targetClass.fields.add(field);
+
+        // add assignment to output variable
+        main.instructions.add(
+                new FieldInsnNode(
+                        Opcodes.PUTSTATIC,
+                        targetClass.name,
+                        "___val",
+                        returnType.asTypeSpecifierString()
+                )
+        );
 
         main.instructions.add(new InsnNode(Opcodes.RETURN));
     }

@@ -2,10 +2,9 @@ package urbachyannick.approxflow.javasignatures;
 
 public class ReturnValue extends FunctionCallVariable {
     public static ReturnValue tryParse(String input, MutableInteger inoutOffset) {
-        if (!input.regionMatches(inoutOffset.get(), "#return_value", 0, 13))
+        if (!ParseUtil.checkConstant(input, "#return_value", inoutOffset))
             return null;
 
-        inoutOffset.add(13); // "#return_value".length()
         return new ReturnValue();
     }
 

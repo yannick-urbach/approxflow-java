@@ -3,7 +3,7 @@ package urbachyannick.approxflow.javasignatures;
 import java.text.ParseException;
 
 public class ParseUtil {
-    public static int parseNumber(String input, MutableInteger inoutOffset) throws ParseException {
+    public static long parseNumber(String input, MutableInteger inoutOffset) {
         int start = inoutOffset.get();
         int offset = inoutOffset.get();
 
@@ -11,14 +11,14 @@ public class ParseUtil {
             ++offset;
 
         if (start == offset)
-            throw new ParseException("Expected digit, got \"" + input.charAt(offset) + "\"", offset);
+            throw new SignatureParseException("Expected digit, got \"" + input.charAt(offset) + "\"", offset);
 
         inoutOffset.set(offset);
 
-        return Integer.parseInt(input.substring(start, offset));
+        return Long.parseLong(input.substring(start, offset));
     }
 
-    public static Integer tryParseNumber(String input, MutableInteger inoutOffset) {
+    public static Long tryParseNumber(String input, MutableInteger inoutOffset) {
         int start = inoutOffset.get();
         int offset = inoutOffset.get();
 
@@ -30,6 +30,14 @@ public class ParseUtil {
 
         inoutOffset.set(offset);
 
-        return Integer.valueOf(input.substring(start, offset));
+        return Long.valueOf(input.substring(start, offset));
+    }
+
+    public static boolean checkConstant(String input, String constant, MutableInteger offset) {
+        if (!input.regionMatches(offset.get(), constant, 0, constant.length()))
+            return false;
+
+        offset.add(constant.length());
+        return true;
     }
 }

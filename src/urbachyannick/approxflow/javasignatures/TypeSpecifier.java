@@ -7,7 +7,7 @@ public interface TypeSpecifier {
     PrimtiveType asPrimitive();
     boolean isPrimitive();
 
-    static TypeSpecifier parse(String input, MutableInteger inoutOffset) throws ParseException {
+    static TypeSpecifier parse(String input, MutableInteger inoutOffset) {
         TypeSpecifier type = PrimtiveType.tryParseFromTypeSpecifier(input, inoutOffset);
 
         if (type == null)

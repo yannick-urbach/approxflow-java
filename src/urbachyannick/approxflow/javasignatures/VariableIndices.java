@@ -19,21 +19,21 @@ public class VariableIndices {
         this.generation = generation;
     }
 
-    public static VariableIndices parse(String input, MutableInteger inoutOffset) throws ParseException {
+    public static VariableIndices parse(String input, MutableInteger inoutOffset) {
         input = input + " "; // sentinel
         int thread = -1;
         int instance = -1;
         int generation = -1;
         MutableInteger offset = new MutableInteger(inoutOffset);
 
-        if (input.charAt(offset.get()) == '!')
-            thread = ParseUtil.parseNumber(input, offset.increment());
+        if (ParseUtil.checkConstant(input, "!", offset))
+            thread = (int) ParseUtil.parseNumber(input, offset);
 
-        if (input.charAt(offset.get()) == '@')
-            instance = ParseUtil.parseNumber(input, offset.increment());
+        if (ParseUtil.checkConstant(input, "@", offset))
+            instance = (int) ParseUtil.parseNumber(input, offset);
 
-        if (input.charAt(offset.get()) == '#')
-            generation = ParseUtil.parseNumber(input, offset.increment());
+        if (ParseUtil.checkConstant(input, "#", offset))
+            generation = (int) ParseUtil.parseNumber(input, offset);
 
         inoutOffset.set(offset.get());
         return new VariableIndices(thread, instance, generation);

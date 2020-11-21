@@ -25,16 +25,16 @@ public class Identifiers {
         return input.substring(oldOffset, offset);
     }
 
-    public static String parseUnqualified(String input, MutableInteger inoutOffset) throws ParseException {
+    public static String parseUnqualified(String input, MutableInteger inoutOffset) {
         String identifier = tryParseUnqualified(input, inoutOffset);
 
         if (identifier == null)
-            throw new ParseException("Expected identifier", inoutOffset.get());
+            throw new SignatureParseException("Expected identifier", inoutOffset.get());
 
         return identifier;
     }
 
-    public static List<String> parseQualified(String input, MutableInteger inoutOffset, char separator, boolean excludeLast) throws ParseException {
+    public static List<String> parseQualified(String input, MutableInteger inoutOffset, char separator, boolean excludeLast) {
         if (Character.isJavaIdentifierPart(input.charAt(input.length() - 1)))
             input = input + " "; // sentinel
 

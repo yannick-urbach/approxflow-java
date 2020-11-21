@@ -9,13 +9,11 @@ public class FieldAccess extends MemberAccess {
         this.name = name;
     }
 
-    public static FieldAccess tryParse(String input, MutableInteger inoutOffset) throws ParseException {
+    public static FieldAccess tryParse(String input, MutableInteger inoutOffset) {
         MutableInteger offset = new MutableInteger(inoutOffset);
 
-        if (input.charAt(offset.get()) != '.')
+        if (!ParseUtil.checkConstant(input, ".", offset))
             return null;
-
-        offset.increment();
 
         String name = Identifiers.parseUnqualified(input, offset);
 

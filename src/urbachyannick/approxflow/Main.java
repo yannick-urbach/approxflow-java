@@ -2,7 +2,7 @@ package urbachyannick.approxflow;
 
 import picocli.CommandLine;
 import urbachyannick.approxflow.codetransformation.*;
-import urbachyannick.approxflow.javasignatures.ParsedSignature;
+import urbachyannick.approxflow.javasignatures.JavaSignature;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -162,7 +162,7 @@ public class Main implements Runnable {
         }
     }
 
-    private IntStream getVariablesForSignature(CnfFile cnfFile, ParsedSignature signature) {
+    private IntStream getVariablesForSignature(CnfFile cnfFile, JavaSignature signature) {
         try {
             return cnfFile
                     .getVarLines()

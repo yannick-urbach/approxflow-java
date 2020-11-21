@@ -3,7 +3,7 @@ package urbachyannick.approxflow.javasignatures;
 import java.text.ParseException;
 
 public abstract class FunctionCallVariable {
-    public static FunctionCallVariable parse(String input, MutableInteger inoutOffset) throws ParseException {
+    public static FunctionCallVariable parse(String input, MutableInteger inoutOffset) {
         FunctionCallVariable variable = ReturnValue.tryParse(input, inoutOffset);
 
         if (variable == null)

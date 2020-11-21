@@ -1,6 +1,5 @@
 package urbachyannick.approxflow.javasignatures;
 
-import java.text.ParseException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -11,32 +10,29 @@ public class ClassName implements TypeSpecifier {
         this.parts = Arrays.copyOf(parts, parts.length);
     }
 
-    public static ClassName parseWithMember(String input, MutableInteger inoutOffset) throws ParseException {
+    public static ClassName parseWithMember(String input, MutableInteger inoutOffset) {
         return parse(input, inoutOffset, '.', true);
     }
 
-    public static ClassName tryParseFromTypeSpecifier(String input, MutableInteger inoutOffset) throws ParseException {
+    public static ClassName tryParseFromTypeSpecifier(String input, MutableInteger inoutOffset) {
         MutableInteger offset = new MutableInteger(inoutOffset);
 
-        if (input.charAt(offset.get()) != 'L')
+        if (!ParseUtil.checkConstant(input, "L", offset))
             return null;
-
-        offset.increment();
 
         ClassName name = parse(input, offset, '/', false);
 
         if (offset.get() >= input.length())
-            throw new ParseException("Unexpected end of input", offset.get());
+            throw new SignatureParseException("Unexpected end of input", offset.get());
 
-        if (input.charAt(offset.get()) != ';')
-            throw new ParseException("Expected \";\", got \"" + input.charAt(offset.get()) + "\"", offset.get());
+        if (!ParseUtil.checkConstant(input, ";", offset))
+            throw new SignatureParseException("Expected \";\", got \"" + input.charAt(offset.get()) + "\"", offset.get());
 
-        offset.increment();
         inoutOffset.set(offset.get());
         return name;
     }
 
-    private static ClassName parse(String input, MutableInteger inoutOffset, char separator, boolean hasMember) throws ParseException {
+    private static ClassName parse(String input, MutableInteger inoutOffset, char separator, boolean hasMember) {
         List<String> parts = Identifiers.parseQualified(input, inoutOffset, separator, hasMember);
 
         return new ClassName(parts.toArray(new String[0]));

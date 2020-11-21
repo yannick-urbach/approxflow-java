@@ -18,7 +18,7 @@ public class ArrayType implements TypeSpecifier {
         );
     }
 
-    public static ArrayType tryParse(String input, MutableInteger inoutOffset) throws ParseException {
+    public static ArrayType tryParse(String input, MutableInteger inoutOffset) {
         MutableInteger offset = new MutableInteger(inoutOffset);
 
         if (input.charAt(offset.get()) != '[')
@@ -27,7 +27,7 @@ public class ArrayType implements TypeSpecifier {
         offset.increment();
 
         if (offset.get() >= input.length())
-            throw new ParseException("Unexpected end of input.", offset.get());
+            throw new SignatureParseException("Unexpected end of input.", offset.get());
 
         TypeSpecifier type = TypeSpecifier.parse(input, offset);
 

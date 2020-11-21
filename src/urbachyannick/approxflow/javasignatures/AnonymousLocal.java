@@ -12,12 +12,10 @@ public class AnonymousLocal extends FunctionCallVariable {
     }
 
     public static AnonymousLocal tryParse(String input, MutableInteger inoutOffset) {
-        if (!input.regionMatches(inoutOffset.get(), "::anonlocal::", 0, 13))
+        if (!ParseUtil.checkConstant(input, "::anonlocal::", inoutOffset))
             return null;
 
-        inoutOffset.add(13); // "::anonlocal::".length()
-
-        Integer stackSlot = ParseUtil.tryParseNumber(input, inoutOffset);
+        Long stackSlot = ParseUtil.tryParseNumber(input, inoutOffset);
 
         if (stackSlot == null)
             return null;
@@ -27,7 +25,7 @@ public class AnonymousLocal extends FunctionCallVariable {
         if (type == null)
             return null;
 
-        return new AnonymousLocal(stackSlot, type);
+        return new AnonymousLocal(stackSlot.intValue(), type);
     }
 
     @Override

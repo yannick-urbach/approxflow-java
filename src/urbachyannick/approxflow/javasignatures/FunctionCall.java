@@ -20,7 +20,7 @@ public class FunctionCall extends MemberAccess {
         this.variable = variable;
     }
 
-    public static FunctionCall tryParse(String input, MutableInteger inoutOffset) throws ParseException {
+    public static FunctionCall tryParse(String input, MutableInteger inoutOffset) {
         input = input + "  "; // sentinel
 
         MutableInteger offset = new MutableInteger(inoutOffset);
@@ -33,28 +33,21 @@ public class FunctionCall extends MemberAccess {
         String name = Identifiers.tryParseUnqualified(input, offset);
 
         if (name == null) {
-            if (input.regionMatches(offset.get(), "<clinit>", 0, 8)) {
+            if (ParseUtil.checkConstant(input, "<clinit>", offset))
                 name = "<clinit>";
-                offset.add(8); // name.length()
-            } else if (input.regionMatches(offset.get(), "<init>", 0, 6)) {
+            else if (ParseUtil.checkConstant(input, "<init>", offset))
                 name = "<init>";
-                offset.add(6); // name.length()
-            } else {
+            else
                 return null;
-            }
         }
 
-        if (!input.regionMatches(offset.get(), ":(", 0, 2))
+        if (!ParseUtil.checkConstant(input, ":(", offset))
             return null;
-
-        offset.add(2);
 
         List<TypeSpecifier> parameterTypes = new ArrayList<>();
 
-        while (input.charAt(offset.get()) != ')')
+        while (!ParseUtil.checkConstant(input, ")", offset))
             parameterTypes.add(TypeSpecifier.parse(input, offset));
-
-        offset.increment();
 
         TypeSpecifier returnType = TypeSpecifier.parse(input, offset);
         FunctionCallVariable variable = FunctionCallVariable.parse(input, offset);
