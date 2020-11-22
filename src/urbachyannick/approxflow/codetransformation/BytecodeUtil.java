@@ -29,4 +29,13 @@ public class BytecodeUtil {
         return annotations.stream()
                 .anyMatch(a -> a.desc.equals(name));
     }
+
+    public static Optional<AnnotationNode> getAnnotation(List<AnnotationNode> annotations, String name) {
+        if (annotations == null)
+            return Optional.empty();
+
+        return annotations.stream()
+                .filter(a -> a.desc.equals(name))
+                .findFirst();
+    }
 }

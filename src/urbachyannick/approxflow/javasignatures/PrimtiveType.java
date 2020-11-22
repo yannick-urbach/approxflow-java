@@ -7,16 +7,16 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public enum PrimtiveType implements TypeSpecifier {
-    VOID("Void", 'V', null, 0, false, Opcodes.RETURN),
-    BOOLEAN("Boolean", 'Z', 'z', 1, true, Opcodes.IRETURN),
-    BYTE("Byte", 'B', 'b', 1, true, Opcodes.IRETURN),
-    SHORT("Short", 'S', 's', 1, true, Opcodes.IRETURN),
-    INT("Int", 'I', 'i', 1, true, Opcodes.IRETURN),
-    LONG("Long", 'J', 'l', 2, true, Opcodes.LRETURN),
-    FLOAT("Float", 'F', 'f', 1, true, Opcodes.FRETURN),
-    DOUBLE("Double", 'D', 'd', 2, true, Opcodes.DRETURN),
-    CHAR("Char", 'C', 'c', 1, true, Opcodes.IRETURN),
-    ADDRESS(null, null, 'a', 1, false, Opcodes.ARETURN); // weird
+    VOID("Void", 'V', null, 0, false, Opcodes.RETURN, 0, 0, 0),
+    BOOLEAN("Boolean", 'Z', 'z', 1, true, Opcodes.IRETURN, Opcodes.ILOAD, Opcodes.BASTORE, Opcodes.T_BOOLEAN),
+    BYTE("Byte", 'B', 'b', 1, true, Opcodes.IRETURN, Opcodes.ILOAD, Opcodes.BASTORE, Opcodes.T_BYTE),
+    SHORT("Short", 'S', 's', 1, true, Opcodes.IRETURN, Opcodes.ILOAD, Opcodes.SASTORE, Opcodes.T_SHORT),
+    INT("Int", 'I', 'i', 1, true, Opcodes.IRETURN, Opcodes.ILOAD, Opcodes.IASTORE, Opcodes.T_INT),
+    LONG("Long", 'J', 'l', 2, true, Opcodes.LRETURN, Opcodes.LLOAD, Opcodes.LASTORE, Opcodes.T_LONG),
+    FLOAT("Float", 'F', 'f', 1, true, Opcodes.FRETURN, Opcodes.FLOAD, Opcodes.FASTORE, Opcodes.T_FLOAT),
+    DOUBLE("Double", 'D', 'd', 2, true, Opcodes.DRETURN, Opcodes.DLOAD, Opcodes.DASTORE, Opcodes.T_DOUBLE),
+    CHAR("Char", 'C', 'c', 1, true, Opcodes.IRETURN, Opcodes.ILOAD, Opcodes.CASTORE, Opcodes.T_CHAR),
+    ADDRESS(null, null, 'a', 1, false, Opcodes.ARETURN, Opcodes.ALOAD, Opcodes.AASTORE, 0); // weird
 
     private final Character baseType;
     private final Character variableNamePostfix;
@@ -24,6 +24,9 @@ public enum PrimtiveType implements TypeSpecifier {
     private final boolean primitive;
     private final String name;
     private final int returnOpcode;
+    private final int loadLocalOpcode;
+    private final int arrayStoreOpcode;
+    private final int typeOpcode;
     private static final Map<Character, PrimtiveType> baseTypeMap;
     private static final Map<Character, PrimtiveType> variableNamePostfixMap;
 
@@ -39,13 +42,26 @@ public enum PrimtiveType implements TypeSpecifier {
                 .collect(Collectors.toMap(t -> t.variableNamePostfix, t -> t));
     }
 
-    PrimtiveType(String name, Character baseType, Character variableNamePostfix, int stackSlots, boolean primitive, int returnOpcode) {
+    PrimtiveType(
+            String name,
+            Character baseType,
+            Character variableNamePostfix,
+            int stackSlots,
+            boolean primitive,
+            int returnOpcode,
+            int loadLocalOpcode,
+            int arrayStoreOpcode,
+            int typeOpcode
+    ) {
         this.baseType = baseType;
         this.variableNamePostfix = variableNamePostfix;
         this.stackSlots = stackSlots;
         this.primitive = primitive;
         this.name = name;
         this.returnOpcode = returnOpcode;
+        this.loadLocalOpcode = loadLocalOpcode;
+        this.arrayStoreOpcode = arrayStoreOpcode;
+        this.typeOpcode = typeOpcode;
     }
 
     public static PrimtiveType tryParseFromTypeSpecifier(String input, MutableInteger offset) {
@@ -93,5 +109,17 @@ public enum PrimtiveType implements TypeSpecifier {
 
     public int getReturnOpcode() {
         return returnOpcode;
+    }
+
+    public int getLoadLocalOpcode() {
+        return loadLocalOpcode;
+    }
+
+    public int getArrayStoreOpcode() {
+        return arrayStoreOpcode;
+    }
+
+    public int getTypeOpcode() {
+        return typeOpcode;
     }
 }

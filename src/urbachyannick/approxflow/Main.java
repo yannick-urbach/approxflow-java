@@ -99,6 +99,7 @@ public class Main implements Runnable {
                 "javac",
                 "-classpath", resPath.resolve("jbmc-core-models.jar").toString() + ":" + resPath.toString(),
                 "-g",
+                "-parameters",
                 className + ".java"
         );
     }
@@ -109,6 +110,7 @@ public class Main implements Runnable {
         try {
             new MethodOfInterestTransform().apply(classFilePath);
             new ReturnValueInput().apply(classFilePath);
+            new ParameterOutput().apply(classFilePath);
             new AddDummyThrow().apply(classFilePath);
         } catch (IOException | InvalidTransformationException e) {
             fail("Failed to transform bytecode", e);
