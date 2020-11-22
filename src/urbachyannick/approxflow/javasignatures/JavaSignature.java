@@ -48,7 +48,7 @@ public class JavaSignature extends Signature {
 
     @Override
     public String toString() {
-        return className.asQualifiedName() + memberAccess.toString() + indices.toString();
+        return "java::" + className.asQualifiedName() + memberAccess.toString() + indices.toString();
     }
 
     public static Signature tryParse(String input) {

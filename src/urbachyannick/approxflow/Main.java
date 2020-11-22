@@ -2,6 +2,7 @@ package urbachyannick.approxflow;
 
 import picocli.CommandLine;
 import urbachyannick.approxflow.codetransformation.*;
+import urbachyannick.approxflow.codetransformation.Scanner;
 import urbachyannick.approxflow.javasignatures.JavaSignature;
 
 import java.io.*;
@@ -153,30 +154,17 @@ public class Main implements Runnable {
     private IntStream getRelevantVariables(CnfFile cnfFile) {
         Path classFilePath = classpath.resolve(className + ".class");
 
-        try {
-            return new OutputVariable().scan(classFilePath)
-                    .flatMapToInt(s -> getVariablesForSignature(cnfFile, s));
-        } catch (IOException e) {
-            fail("Failed to scan bytecode for outputs");
-            throw new Unreachable();
-        }
-    }
-
-    private IntStream getVariablesForSignature(CnfFile cnfFile, JavaSignature signature) {
-        try {
-            return cnfFile
-                    .getVarLines()
-                    .filter(line -> signature.matches(line.getSignature()))
-                    .max(CnfVarLine::compareByGeneration)
-                    .orElseThrow(() -> new CnfException("missing variable line for " + signature.toString()))
-                    .getLiterals();
-        } catch (CnfException e) {
-            System.err.println("Can not find variable line for " + signature.toString());
-            return IntStream.empty();
-        } catch (IOException e) {
-            fail("Failed to scan CNF file for variables");
-            throw new Unreachable();
-        }
+        return Stream.of(
+                new OutputVariable(),
+                new OutputArray()
+        ).flatMapToInt(s -> {
+            try {
+                return s.scan(classFilePath, cnfFile);
+            } catch (IOException e) {
+                fail("Failed to scan bytecode for outputs");
+                throw new Unreachable();
+            }
+        });
     }
 
     /**

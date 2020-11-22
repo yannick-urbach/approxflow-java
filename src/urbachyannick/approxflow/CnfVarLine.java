@@ -1,5 +1,6 @@
 package urbachyannick.approxflow;
 
+import urbachyannick.approxflow.javasignatures.DynamicArraySignature;
 import urbachyannick.approxflow.javasignatures.JavaSignature;
 import urbachyannick.approxflow.javasignatures.Signature;
 import urbachyannick.approxflow.javasignatures.UnparsedSignature;
@@ -71,16 +72,22 @@ public class CnfVarLine {
      * Compares the generation indices of two variable lines
      * @param left the first variable line
      * @param right the second variable line
-     * @return -1, 0 or 1 as the generation index of left is lesser, equal to, or greater than that of right, or 0 if either of the signatures is unparsed
+     * @return -1, 0 or 1 as the generation index of left is lesser, equal to, or greater than that of right, or 0 if the signatures are not of the same type
      */
     public static int compareByGeneration(CnfVarLine left, CnfVarLine right) {
-        if (left.signature instanceof UnparsedSignature || right.signature instanceof UnparsedSignature)
-            return 0;
+        if (left.signature instanceof JavaSignature && right.signature instanceof JavaSignature)
+            return Integer.compare(
+                    ((JavaSignature)left.getSignature()).getIndices().getGeneration(),
+                    ((JavaSignature)right.getSignature()).getIndices().getGeneration()
+            );
 
-        return Integer.compare(
-                ((JavaSignature)left.getSignature()).getIndices().getGeneration(),
-                ((JavaSignature)right.getSignature()).getIndices().getGeneration()
-        );
+        if (left.signature instanceof DynamicArraySignature && right.signature instanceof DynamicArraySignature)
+            return Integer.compare(
+                    ((DynamicArraySignature)left.getSignature()).getIndices().getGeneration(),
+                    ((DynamicArraySignature)right.getSignature()).getIndices().getGeneration()
+            );
+
+        return 0;
     }
 
     /**

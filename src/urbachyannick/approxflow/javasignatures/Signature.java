@@ -5,6 +5,9 @@ public abstract class Signature {
         Signature signature = JavaSignature.tryParse(input);
 
         if (signature == null)
+            signature = DynamicArraySignature.tryParse(input);
+
+        if (signature == null)
             signature = new UnparsedSignature(input);
 
         return signature;

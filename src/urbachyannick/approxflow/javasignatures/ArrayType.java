@@ -62,4 +62,8 @@ public class ArrayType implements TypeSpecifier {
 
         return ((ArrayType) o).elementType.equals(elementType);
     }
+
+    public TypeSpecifier getElementType() {
+        return elementType;
+    }
 }
