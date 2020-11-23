@@ -111,6 +111,7 @@ public class Main implements Runnable {
             new MethodOfInterestTransform().apply(classFilePath);
             new ReturnValueInput().apply(classFilePath);
             new ParameterOutput().apply(classFilePath);
+            new AssertToAssume().apply(classFilePath);
             new AddDummyThrow().apply(classFilePath);
         } catch (IOException | InvalidTransformationException e) {
             fail("Failed to transform bytecode", e);

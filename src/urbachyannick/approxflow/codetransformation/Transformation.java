@@ -4,7 +4,6 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
-import urbachyannick.approxflow.FilesUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
