@@ -108,11 +108,13 @@ public class Main implements Runnable {
         Path classFilePath = classpath.resolve(className + ".class");
 
         try {
-            new MethodOfInterestTransform().apply(classFilePath);
-            new ReturnValueInput().apply(classFilePath);
-            new ParameterOutput().apply(classFilePath);
-            new AssertToAssume().apply(classFilePath);
-            new AddDummyThrow().apply(classFilePath);
+            Transformation.applyMultiple(classFilePath, classFilePath,
+                    new MethodOfInterestTransform(),
+                    new ReturnValueInput(),
+                    new ParameterOutput(),
+                    new AssertToAssume(),
+                    new AddDummyThrow()
+            );
         } catch (IOException | InvalidTransformationException e) {
             fail("Failed to transform bytecode", e);
         }
