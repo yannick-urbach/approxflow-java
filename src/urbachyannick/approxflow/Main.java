@@ -113,7 +113,8 @@ public class Main implements Runnable {
                     new ReturnValueInput(),
                     new ParameterOutput(),
                     new AssertToAssume(),
-                    new AddDummyThrow()
+                    new AddDummyThrow(),
+                    new UnrollLoops()
             );
         } catch (IOException | InvalidTransformationException e) {
             fail("Failed to transform bytecode", e);
