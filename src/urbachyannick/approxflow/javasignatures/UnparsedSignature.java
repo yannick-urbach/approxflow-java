@@ -15,4 +15,22 @@ public class UnparsedSignature extends Signature {
     public String toString() {
         return text;
     }
+
+    @Override
+    public int hashCode() {
+        return text.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof UnparsedSignature))
+            return false;
+
+        return ((UnparsedSignature) o).text.equals(text);
+    }
+
+    @Override
+    public boolean matches(Signature signature) {
+        return equals(signature);
+    }
 }

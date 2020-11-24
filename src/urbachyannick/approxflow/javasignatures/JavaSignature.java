@@ -37,6 +37,7 @@ public class JavaSignature extends Signature {
         return indices;
     }
 
+    @Override
     public boolean matches(Signature other) {
         if (!(other instanceof JavaSignature))
             return false;

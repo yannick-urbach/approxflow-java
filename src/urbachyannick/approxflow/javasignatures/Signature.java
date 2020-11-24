@@ -12,4 +12,6 @@ public abstract class Signature {
 
         return signature;
     }
+
+    public abstract boolean matches(Signature signature);
 }

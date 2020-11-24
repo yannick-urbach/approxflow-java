@@ -3,6 +3,10 @@ package urbachyannick.approxflow.codetransformation;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 import urbachyannick.approxflow.*;
+import urbachyannick.approxflow.cnf.Literal;
+import urbachyannick.approxflow.cnf.MappedProblem;
+import urbachyannick.approxflow.cnf.TrivialMappingValue;
+import urbachyannick.approxflow.cnf.VariableMapping;
 import urbachyannick.approxflow.javasignatures.*;
 
 import java.io.IOException;
@@ -17,8 +21,8 @@ import static urbachyannick.approxflow.codetransformation.BytecodeUtil.hasFlag;
 
 public class OutputArray extends Scanner<IntStream> {
     @Override
-    public IntStream scan(ClassNode sourceClass, CnfFile cnfFile) throws IOException {
-        List<CnfVarLine> varLines = cnfFile.getVarLines().collect(Collectors.toList());
+    public IntStream scan(ClassNode sourceClass, MappedProblem problem) throws IOException {
+        List<VariableMapping> mappings = problem.getVariableTable().getMappings().collect(Collectors.toList());
 
         return sourceClass.fields.stream().flatMapToInt(field -> {
 
@@ -43,19 +47,19 @@ public class OutputArray extends Scanner<IntStream> {
                         new FieldAccess(field.name)
                 );
 
-                Optional<CnfVarLine> varLine = varLines.stream()
+                Optional<VariableMapping> varLine = mappings.stream()
                         .filter(l -> fieldSignature.matches(l.getSignature()))
-                        .max(CnfVarLine::compareByGeneration);
+                        .max(VariableMapping::compareByGeneration);
 
                 if (!varLine.isPresent()) {
                     System.err.println("Can not find variable line for " + fieldSignature.toString());
                     return IntStream.empty();
                 }
 
-                long address = MiscUtil.parseAddressFromTrivialLiterals(varLine.get().getLiterals());
+                long address = MiscUtil.parseAddressFromTrivialLiterals(varLine.get().getMappingValues().map(v -> (TrivialMappingValue) v));
 
                 // all lines of elements of the array with this address, grouped by the element index
-                Map<Long, List<CnfVarLine>> elementLines = varLines.stream()
+                Map<Long, List<VariableMapping>> elementLines = mappings.stream()
                         .filter(l -> (
                                 l.getSignature() instanceof DynamicArraySignature &&
                                 ((DynamicArraySignature) l.getSignature()).getAddress() == address
@@ -66,11 +70,12 @@ public class OutputArray extends Scanner<IntStream> {
                 IntStream literals = elementLines.values().stream()
                         .flatMapToInt(
                                 l -> l.stream()
-                                        .max(CnfVarLine::compareByGeneration)
+                                        .max(VariableMapping::compareByGeneration)
                                         .get()
-                                        .getLiterals()
-                        )
-                        .filter(CnfLiteral::isNonTrivial);
+                                        .getMappingValues()
+                                        .filter(v -> !v.isTrivial())
+                                        .mapToInt(v -> ((Literal) v).getVariable())
+                        );
 
                 return literals;
         });

@@ -1,12 +1,13 @@
 package urbachyannick.approxflow;
 
 import picocli.CommandLine;
+import urbachyannick.approxflow.cnf.IO;
+import urbachyannick.approxflow.cnf.MappedProblem;
+import urbachyannick.approxflow.cnf.Scope;
+import urbachyannick.approxflow.cnf.ScopedMappedProblem;
 import urbachyannick.approxflow.codetransformation.*;
-import urbachyannick.approxflow.codetransformation.Scanner;
-import urbachyannick.approxflow.javasignatures.JavaSignature;
 
 import java.io.*;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -57,11 +58,9 @@ public class Main implements Runnable {
         buildClass();
         transformBytecode();
 
-        CnfFile cnfFile = generateCnf();
-        CnfFile renamed = null;
+        MappedProblem problem = generateCnf();
 
-        List<Integer> variables = getRelevantVariables(cnfFile)
-                .filter(CnfLiteral::isNonTrivial)
+        List<Integer> variables = getRelevantVariables(problem)
                 .distinct()
                 .boxed()
                 .collect(Collectors.toList());
@@ -69,21 +68,18 @@ public class Main implements Runnable {
         if (variables.isEmpty())
             fail("No variables for which to solve. Information flow might be 0.");
 
+        Scope scope = new Scope(variables.stream().mapToInt(Integer::intValue));
+        ScopedMappedProblem scopedMappedProblem = new ScopedMappedProblem(problem, scope);
+        Path cnfFilePath = classpath.resolve(className + ".cnf");
+
         try {
-            renamed = cnfFile.renameVariablesToBottom(variables.stream().mapToInt(Integer::intValue));
+            IO.write(scopedMappedProblem, cnfFilePath);
         } catch (IOException e) {
-            fail("Failed to rename variables", e);
-            throw new Unreachable();
+            fail("Can not write CNF file", e);
         }
 
-        int variableCount = variables.size();
-
-        addIndLines(renamed, IntStream.range(1, variableCount + 1));
-        addCrLines(renamed, IntStream.range(1, variableCount + 1));
-        createScopeFile(classpath.resolve(className + ".cnf.scope"), IntStream.range(1, variableCount + 1));
-
         if (!cnfOnly) {
-            double informationFlow = calculateInformationFlow(renamed);
+            double informationFlow = calculateInformationFlow(cnfFilePath);
             System.out.println("Approximated flow is: " + informationFlow);
         }
     }
@@ -126,7 +122,7 @@ public class Main implements Runnable {
      *
      * @return the CNF file
      */
-    private CnfFile generateCnf() {
+    private MappedProblem generateCnf() {
         try {
             Path cnfFilePath = classpath.resolve(className + ".cnf");
 
@@ -150,14 +146,14 @@ public class Main implements Runnable {
             }
 
             runCommand(classpath, command);
-            return new CnfFile(cnfFilePath);
-        } catch (CnfException | IOException e) {
+            return IO.readMappedProblem(cnfFilePath);
+        } catch (IOException e) {
             fail("Failed to generate CNF");
             throw new Unreachable();
         }
     }
 
-    private IntStream getRelevantVariables(CnfFile cnfFile) {
+    private IntStream getRelevantVariables(MappedProblem problem) {
         Path classFilePath = classpath.resolve(className + ".class");
 
         return Stream.of(
@@ -165,7 +161,7 @@ public class Main implements Runnable {
                 new OutputArray()
         ).flatMapToInt(s -> {
             try {
-                return s.scan(classFilePath, cnfFile);
+                return s.scan(classFilePath, problem);
             } catch (IOException e) {
                 fail("Failed to scan bytecode for outputs");
                 throw new Unreachable();
@@ -174,92 +170,15 @@ public class Main implements Runnable {
     }
 
     /**
-     * Adds the scope lines for ApproxMC (c ind ...). If scope lines are already present, duplicates are avoided.
-     *
-     * @param file the CNF file to which the lines will be added
-     * @param variables the variables to add to the scope lines
-     */
-    private void addIndLines(CnfFile file, IntStream variables) {
-        try {
-            // variables already in scope lines (why can there already be scope lines?)
-            Set<Integer> approxMc = file.getIndLines()
-                    .flatMap(line -> line.getLiterals().boxed())
-                    .collect(Collectors.toSet());
-
-            // variables requested, but not yet in scope lines
-            List<Integer> approxMcAllsatVars = variables
-                    .filter(variable -> !approxMc.contains(variable))
-                    .boxed().collect(Collectors.toList());
-
-            // split approxMcAllsatVars into scope lines of 10 literals each (why is this necessary?)
-            Stream<CnfIndLine> newLines = IntStream
-                    .range(0, (approxMcAllsatVars.size() + 9) / 10)
-                    .map(i -> 10 * i)
-                    .mapToObj(i ->
-                            new CnfIndLine(
-                                    approxMcAllsatVars.subList(i, Math.min(i + 10, approxMcAllsatVars.size()))
-                                            .stream().mapToInt(Integer::intValue)
-                            )
-                    );
-
-            // add missing
-            file.addIndLines(newLines);
-        } catch (IOException e) {
-            fail("FAIL: Failed to add ind lines", e);
-        }
-    }
-
-    /**
-     * Adds the scope lines for ApproxMC-py (cr ...). If scope lines are already present, duplicates are avoided.
-     *
-     * @param file the CNF file to which the lines will be added
-     * @param variables the variables to add to the scope lines
-     */
-    private void addCrLines(CnfFile file, IntStream variables) {
-        try {
-            // variables in cr lines (why can there already be cr lines?)
-            Set<Integer> approxMcPy = file.getCrLines()
-                    .flatMap(line -> line.getLiterals().boxed())
-                    .collect(Collectors.toSet());
-
-            // variables in val line, but not yet in cr lines
-            List<Integer> approxMcPyAllsatVars = variables
-                    .filter(variable -> !approxMcPy.contains(variable))
-                    .boxed().collect(Collectors.toList());
-
-            // add missing
-            file.addCrLines(Stream.of(new CnfCrLine(approxMcPyAllsatVars.stream().mapToInt(Integer::intValue))));
-        } catch (IOException e) {
-            fail("Failed to add cr line", e);
-        }
-    }
-
-    /**
-     * Creates the scope file for sharpCDCL.
-     *
-     * @param path the path of the scope file
-     * @param variables the variables to add to the scope file
-     */
-    private void createScopeFile(Path path, IntStream variables) {
-        try {
-            try (BufferedWriter writer = Files.newBufferedWriter(path)) {
-                FilesUtil.writeLines(writer, variables.mapToObj(CnfLiteral::toString));
-            }
-        } catch (IOException e) {
-            fail("Failed to create scope file", e);
-        }
-    }
-
-    /**
      * Uses scalmc to calculate the information flow for a given CNF file.
      *
-     * @param file the CNF file
+     * @param cnfFilePath the CNF file path
      * @return the information flow
      */
-    private double calculateInformationFlow(CnfFile file) {
+    private double calculateInformationFlow(Path cnfFilePath) {
         try {
             Process process = new ProcessBuilder()
-                    .command(Paths.get("util/scalmc").toAbsolutePath().toString(), file.getPath().toString())
+                    .command(Paths.get("util/scalmc").toAbsolutePath().toString(), cnfFilePath.toString())
                     .redirectOutput(ProcessBuilder.Redirect.PIPE)
                     .directory(classpath.toFile())
                     .start();

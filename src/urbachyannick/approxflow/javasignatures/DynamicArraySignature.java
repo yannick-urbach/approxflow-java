@@ -1,5 +1,7 @@
 package urbachyannick.approxflow.javasignatures;
 
+import java.util.Objects;
+
 public class DynamicArraySignature extends Signature {
     private final long address;
     private final long elementIndex;
@@ -62,5 +64,30 @@ public class DynamicArraySignature extends Signature {
 
     public VariableIndices getIndices() {
         return indices;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(address, elementIndex, indices);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof DynamicArraySignature))
+            return false;
+
+        DynamicArraySignature other = (DynamicArraySignature) o;
+
+        return other.address == address && other.elementIndex == elementIndex && other.indices.equals(indices);
+    }
+
+    @Override
+    public boolean matches(Signature signature) {
+        if (!(signature instanceof DynamicArraySignature))
+            return false;
+
+        DynamicArraySignature other = (DynamicArraySignature) signature;
+
+        return other.address == address && other.elementIndex == elementIndex;
     }
 }
