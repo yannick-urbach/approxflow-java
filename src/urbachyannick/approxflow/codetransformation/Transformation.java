@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Iterator;
+import java.util.stream.Stream;
 
 public abstract class Transformation {
     public abstract void apply(ClassNode sourceClass, ClassNode targetClass) throws IOException, InvalidTransformationException;
@@ -44,6 +46,27 @@ public abstract class Transformation {
         for (Transformation t : transformations) {
             ClassNode transformed = new ClassNode();
             t.apply(current, transformed);
+            current = transformed;
+        }
+
+        ClassWriter writer = new ClassWriter(0);
+        current.accept(writer);
+        Files.write(output, writer.toByteArray());
+    }
+
+    public static void applyMultiple(Path input, Path output, Stream<Transformation> transformations) throws IOException, InvalidTransformationException {
+        ClassNode current = new ClassNode(Opcodes.ASM5); // Java 8
+
+        InputStream inputStream = Files.newInputStream(input);
+        ClassReader reader = new ClassReader(inputStream);
+        reader.accept(current, 0); // read source class from input file
+        inputStream.close();
+
+        Iterator<Transformation> i = transformations.iterator();
+
+        while (i.hasNext()) {
+            ClassNode transformed = new ClassNode();
+            i.next().apply(current, transformed);
             current = transformed;
         }
 

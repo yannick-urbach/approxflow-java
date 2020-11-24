@@ -6,8 +6,13 @@ import urbachyannick.approxflow.cnf.MappedProblem;
 import urbachyannick.approxflow.cnf.Scope;
 import urbachyannick.approxflow.cnf.ScopedMappedProblem;
 import urbachyannick.approxflow.codetransformation.*;
+import urbachyannick.approxflow.codetransformation.Scanner;
+import urbachyannick.approxflow.modelcounting.ModelCounter;
+import urbachyannick.approxflow.modelcounting.ModelCountingException;
+import urbachyannick.approxflow.modelcounting.ScalMC;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -28,6 +33,8 @@ import static picocli.CommandLine.*;
 @Command(name = "approxflow", mixinStandardHelpOptions = true)
 public class Main implements Runnable {
 
+
+
     // region --- Command line arguments and options ---
     // (parsed and filled in by PicoCLI)
 
@@ -47,6 +54,30 @@ public class Main implements Runnable {
     private int unwind;
 
     // endregion
+
+
+
+    // region --- Configuration ---
+
+    private static final List<Transformation> transformations = new ArrayList<Transformation>(){{
+            add(new MethodOfInterestTransform());
+            add(new ReturnValueInput());
+            add(new ParameterOutput());
+            add(new AssertToAssume());
+            add(new AddDummyThrow());
+            add(new UnrollLoops());
+    }};
+
+    private static final List<Scanner<IntStream>> relevantVariableScanners = new ArrayList<Scanner<IntStream>>(){{
+            add(new OutputVariable());
+            add(new OutputArray());
+    }};
+
+    private static final ModelCounter modelCounter = new ScalMC();
+
+    // endregion
+
+
 
     /**
      * Actual program. Called by PicoCLI.
@@ -70,17 +101,15 @@ public class Main implements Runnable {
 
         Scope scope = new Scope(variables.stream().mapToInt(Integer::intValue));
         ScopedMappedProblem scopedMappedProblem = new ScopedMappedProblem(problem, scope);
-        Path cnfFilePath = classpath.resolve(className + ".cnf");
-
-        try {
-            IO.write(scopedMappedProblem, cnfFilePath);
-        } catch (IOException e) {
-            fail("Can not write CNF file", e);
-        }
 
         if (!cnfOnly) {
-            double informationFlow = calculateInformationFlow(cnfFilePath);
-            System.out.println("Approximated flow is: " + informationFlow);
+            try {
+                double solutions = modelCounter.count(scopedMappedProblem);
+                double informationFlow = Math.log(solutions) / Math.log(2);
+                System.out.println("Approximated flow is: " + informationFlow);
+            } catch (ModelCountingException e) {
+                fail("Error during model counting", e);
+            }
         }
     }
 
@@ -104,14 +133,7 @@ public class Main implements Runnable {
         Path classFilePath = classpath.resolve(className + ".class");
 
         try {
-            Transformation.applyMultiple(classFilePath, classFilePath,
-                    new MethodOfInterestTransform(),
-                    new ReturnValueInput(),
-                    new ParameterOutput(),
-                    new AssertToAssume(),
-                    new AddDummyThrow(),
-                    new UnrollLoops()
-            );
+            Transformation.applyMultiple(classFilePath, classFilePath, transformations.stream());
         } catch (IOException | InvalidTransformationException e) {
             fail("Failed to transform bytecode", e);
         }
@@ -146,7 +168,9 @@ public class Main implements Runnable {
             }
 
             runCommand(classpath, command);
-            return IO.readMappedProblem(cnfFilePath);
+            MappedProblem problem = IO.readMappedProblem(cnfFilePath);
+            Files.delete(cnfFilePath);
+            return problem;
         } catch (IOException e) {
             fail("Failed to generate CNF");
             throw new Unreachable();
@@ -156,10 +180,7 @@ public class Main implements Runnable {
     private IntStream getRelevantVariables(MappedProblem problem) {
         Path classFilePath = classpath.resolve(className + ".class");
 
-        return Stream.of(
-                new OutputVariable(),
-                new OutputArray()
-        ).flatMapToInt(s -> {
+        return relevantVariableScanners.stream().flatMapToInt(s -> {
             try {
                 return s.scan(classFilePath, problem);
             } catch (IOException e) {

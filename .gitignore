@@ -35,7 +35,7 @@ hs_err_pid*
 # generated during testing
 /test/*.cnf
 /test/*.cnf.scope
-/test/cusp_log.txt
+cusp_log.txt
 
 # do not ignore
 !/res/jbmc-core-models.jar
