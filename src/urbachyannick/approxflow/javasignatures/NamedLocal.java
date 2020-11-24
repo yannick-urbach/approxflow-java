@@ -1,17 +1,15 @@
 package urbachyannick.approxflow.javasignatures;
 
-import java.text.ParseException;
-
 public class NamedLocal extends FunctionCallVariable {
     private String name;
-    private int mysteryNumber; // somehow related to "start" in the local variable table, but 1 lower for some reason?
+    private Long mysteryNumber; // somehow related to "start" in the local variable table, but 1 lower for some reason?
 
     public NamedLocal(String name) {
         this.name = name;
-        mysteryNumber = 0;
+        mysteryNumber = 0L;
     }
 
-    private NamedLocal(String name, int mysteryNumber) {
+    private NamedLocal(String name, Long mysteryNumber) {
         this.name = name;
         this.mysteryNumber = mysteryNumber;
     }
@@ -26,26 +24,21 @@ public class NamedLocal extends FunctionCallVariable {
 
         Long mysteryNumber = ParseUtil.tryParseNumber(input, offset);
 
-        if (mysteryNumber == null) {
-            mysteryNumber = 0L;
-        } else if (!ParseUtil.checkConstant(input, "::", offset)) {
+        if (mysteryNumber != null && !ParseUtil.checkConstant(input, "::", offset)) {
             // actually part of the name (is that possible? probably not...)
             offset = beforeNumber;
-            mysteryNumber = 0L;
-        } else {
-            // is mystery number
-            offset.add(2);
+            mysteryNumber = null;
         }
 
         String name = Identifiers.parseUnqualified(input, offset);
 
         inoutOffset.set(offset.get());
-        return new NamedLocal(name, mysteryNumber.intValue());
+        return new NamedLocal(name, mysteryNumber);
     }
 
     @Override
     public String toString() {
-        return "::" + name;
+        return (mysteryNumber == null ? "" : "::" + mysteryNumber) + "::" + name;
     }
 
     @Override

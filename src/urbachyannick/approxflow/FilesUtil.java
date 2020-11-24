@@ -85,7 +85,9 @@ public class FilesUtil {
                 }
             });
         } catch (RuntimeException e) { // ugly workaround, part II
-            throw (IOException) e.getCause();
+            if (e.getCause() instanceof IOException)
+                throw (IOException) e.getCause();
+            else throw e;
         }
     }
 }
