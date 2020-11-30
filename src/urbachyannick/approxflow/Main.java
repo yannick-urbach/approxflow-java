@@ -198,50 +198,6 @@ public class Main implements Runnable {
         });
     }
 
-    /**
-     * Uses scalmc to calculate the information flow for a given CNF file.
-     *
-     * @param cnfFilePath the CNF file path
-     * @return the information flow
-     */
-    private double calculateInformationFlow(Path cnfFilePath) {
-        try {
-            Process process = new ProcessBuilder()
-                    .command(Paths.get("util/scalmc").toAbsolutePath().toString(), cnfFilePath.toString())
-                    .redirectOutput(ProcessBuilder.Redirect.PIPE)
-                    .directory(classpath.toFile())
-                    .start();
-
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                String line;
-
-                while ((line = reader.readLine()) != null) {
-                    System.out.println(line);
-
-                    if (line.startsWith("Number of solutions is:")) {
-                        Matcher matcher = Pattern.compile("Number of solutions is: (\\d+) x (\\d+)\\^(\\d+)").matcher(line);
-
-                        if (!matcher.find())
-                            fail("Failed to parse result of SAT solver");
-
-                        int multiplier = Integer.parseInt(matcher.group(1));
-                        int base = Integer.parseInt(matcher.group(2));
-                        int exponent = Integer.parseInt(matcher.group(3));
-                        double solutions = multiplier * Math.pow(base, exponent);
-                        return Math.log(solutions) / Math.log(2);
-                    }
-                }
-            } finally {
-                process.waitFor();
-            }
-        } catch (IOException | InterruptedException e) {
-            fail("Failed to run SAT solver", e);
-        }
-
-        fail("Failed to parse result of SAT solver");
-        throw new Unreachable();
-    }
-
     // helper to run a *necessary* command (exits with fail message if not successful)
     private static void runCommand(Path workingDirectory, List<String> command) {
         try {
