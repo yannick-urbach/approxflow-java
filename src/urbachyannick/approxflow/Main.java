@@ -71,6 +71,7 @@ public class Main implements Runnable {
     private static final List<Scanner<IntStream>> relevantVariableScanners = new ArrayList<Scanner<IntStream>>(){{
             add(new OutputVariable());
             add(new OutputArray());
+            add(new ParameterOutputOverApproximated());
     }};
 
     private static final ModelCounter modelCounter = new ScalMC();

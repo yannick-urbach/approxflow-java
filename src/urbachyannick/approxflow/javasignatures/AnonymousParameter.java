@@ -44,10 +44,10 @@ public class AnonymousParameter extends FunctionCallVariable {
 
     @Override
     public boolean equals(Object other) {
-        if (!(other instanceof AnonymousLocal))
+        if (!(other instanceof AnonymousParameter))
             return false;
 
-        AnonymousLocal o = (AnonymousLocal) other;
+        AnonymousParameter o = (AnonymousParameter) other;
 
         return (
                 type.equals(o.type) &&

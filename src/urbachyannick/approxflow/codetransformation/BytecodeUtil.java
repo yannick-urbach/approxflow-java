@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 public class BytecodeUtil {
     private static final Map<Integer, Integer> jumpInversions = new HashMap<Integer, Integer>() {
@@ -100,6 +101,15 @@ public class BytecodeUtil {
         LdcInsnNode i = (LdcInsnNode) instruction;
 
         return Optional.ofNullable(i.cst);
+    }
+
+    public static Optional<Object> getAnnotationValue(AnnotationNode annotation, String key) {
+        for (int i = 0; i < annotation.values.size(); i += 2) {
+            if (annotation.values.get(i).equals(key))
+                return Optional.ofNullable(annotation.values.get(i + 1));
+        }
+
+        return Optional.empty();
     }
 
     // copy [start, end) and insert behind target
