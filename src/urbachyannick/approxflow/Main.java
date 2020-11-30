@@ -16,11 +16,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static picocli.CommandLine.*;
 
@@ -43,6 +40,9 @@ public class Main implements Runnable {
 
     @Parameters(index = "1", paramLabel = "classpath", description = "classpath containing the main class")
     private Path classpath;
+
+    @Option(names = {"--write-cnf"}, description = "write the cnf file to disk")
+    private boolean writeCnf;
 
     @Option(names = {"-c", "--cnf-only"}, description = "print only the cnf")
     private boolean cnfOnly;
@@ -101,6 +101,14 @@ public class Main implements Runnable {
 
         Scope scope = new Scope(variables.stream().mapToInt(Integer::intValue));
         ScopedMappedProblem scopedMappedProblem = new ScopedMappedProblem(problem, scope);
+
+        if (writeCnf) {
+            try {
+                IO.write(scopedMappedProblem, classpath.resolve(className + ".cnf"));
+            } catch (IOException e) {
+                fail("Can not write cnf file to disk");
+            }
+        }
 
         if (!cnfOnly) {
             try {
