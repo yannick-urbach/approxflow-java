@@ -1,13 +1,9 @@
 package urbachyannick.approxflow;
 
-import urbachyannick.approxflow.cnf.MappingValue;
 import urbachyannick.approxflow.cnf.TrivialMappingValue;
 
 import java.util.Iterator;
-import java.util.PrimitiveIterator;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.IntStream;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 public class MiscUtil {
@@ -32,5 +28,13 @@ public class MiscUtil {
             throw new IllegalArgumentException("Must have exactly 64 literals");
 
         return result;
+    }
+
+    // available as member function in Java 9, but not in Java 8
+    public static <T> Optional<T> or(Optional<T> o1, Optional<T> o2) {
+        if (o1.isPresent())
+            return o1;
+        else
+            return o2;
     }
 }

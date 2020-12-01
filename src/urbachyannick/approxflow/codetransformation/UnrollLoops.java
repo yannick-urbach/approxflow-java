@@ -6,14 +6,25 @@ import org.objectweb.asm.tree.*;
 import java.io.IOException;
 import java.util.*;
 
+import static urbachyannick.approxflow.MiscUtil.or;
+import static urbachyannick.approxflow.codetransformation.BytecodeUtil.getAnnotation;
+import static urbachyannick.approxflow.codetransformation.BytecodeUtil.getAnnotationValue;
+
 public class UnrollLoops extends Transformation {
 
     @Override
     public void apply(ClassNode sourceClass, ClassNode targetClass) throws IOException, InvalidTransformationException {
         sourceClass.accept(targetClass);
 
-        for (MethodNode m : targetClass.methods)
-            applyToInstructions(m.instructions);
+        Optional<AnnotationNode> classAnnotation = getAnnotation(sourceClass.visibleAnnotations, "Lurbachyannick/approxflow/Unroll;");
+        Optional<Object> classIterations = classAnnotation.flatMap(a -> getAnnotationValue(a, "iterations"));
+
+        for (MethodNode m : targetClass.methods) {
+            Optional<AnnotationNode> methodAnnotation = getAnnotation(m.visibleAnnotations, "Lurbachyannick/approxflow/Unroll;");
+            Optional<Object> methodIterations = methodAnnotation.flatMap(a -> getAnnotationValue(a, "iterations"));
+
+            applyToInstructions(m.instructions, or(methodIterations, classIterations).map(i -> (int) i));
+        }
     }
 
     private static boolean isCall(AbstractInsnNode instruction) {
@@ -24,19 +35,19 @@ public class UnrollLoops extends Transformation {
         return i.owner.equals("urbachyannick/approxflow/Loops") && i.name.equals("unroll");
     }
 
-    private void applyToInstructions(InsnList instructions) {
+    private void applyToInstructions(InsnList instructions, Optional<Integer> methodIterations) {
         Map<LabelNode, Integer> labels = new HashMap<>();
 
-        int count = -1;
+        Optional<Integer> count = methodIterations;
 
         for (AbstractInsnNode instruction : instructions) {
             Optional<Object> constant = BytecodeUtil.readConstantInstruction(instruction);
 
             if (constant.isPresent() && constant.get() instanceof Integer && isCall(instruction.getNext()))
-                count = (Integer) constant.get();
+                count = Optional.of((Integer) constant.get());
 
-            if (instruction.getType() == AbstractInsnNode.LABEL && count > 0)
-                labels.put((LabelNode) instruction, count);
+            if (instruction.getType() == AbstractInsnNode.LABEL && count.isPresent())
+                labels.put((LabelNode) instruction, count.get());
 
             if (instruction.getType() == AbstractInsnNode.JUMP_INSN && labels.containsKey(((JumpInsnNode) instruction).label)) {
                 JumpInsnNode jump = (JumpInsnNode) instruction;
