@@ -21,12 +21,12 @@ public abstract class Transformation {
 
         InputStream inputStream = Files.newInputStream(input);
         ClassReader reader = new ClassReader(inputStream);
-        reader.accept(sourceClass, 0); // read source class from input file
+        reader.accept(sourceClass, ClassReader.EXPAND_FRAMES); // read source class from input file
         inputStream.close();
 
         apply(sourceClass, targetClass);
 
-        ClassWriter writer = new ClassWriter(0);
+        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         targetClass.accept(writer);
         Files.write(output, writer.toByteArray());
     }
@@ -40,7 +40,7 @@ public abstract class Transformation {
 
         InputStream inputStream = Files.newInputStream(input);
         ClassReader reader = new ClassReader(inputStream);
-        reader.accept(current, 0); // read source class from input file
+        reader.accept(current, ClassReader.EXPAND_FRAMES); // read source class from input file
         inputStream.close();
 
         for (Transformation t : transformations) {
@@ -49,7 +49,7 @@ public abstract class Transformation {
             current = transformed;
         }
 
-        ClassWriter writer = new ClassWriter(0);
+        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         current.accept(writer);
         Files.write(output, writer.toByteArray());
     }
@@ -59,7 +59,7 @@ public abstract class Transformation {
 
         InputStream inputStream = Files.newInputStream(input);
         ClassReader reader = new ClassReader(inputStream);
-        reader.accept(current, 0); // read source class from input file
+        reader.accept(current, ClassReader.EXPAND_FRAMES); // read source class from input file
         inputStream.close();
 
         Iterator<Transformation> i = transformations.iterator();
@@ -70,7 +70,7 @@ public abstract class Transformation {
             current = transformed;
         }
 
-        ClassWriter writer = new ClassWriter(0);
+        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         current.accept(writer);
         Files.write(output, writer.toByteArray());
     }

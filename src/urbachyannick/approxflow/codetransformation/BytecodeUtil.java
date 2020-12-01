@@ -4,11 +4,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Function;
+import java.util.*;
 
 public class BytecodeUtil {
     private static final Map<Integer, Integer> jumpInversions = new HashMap<Integer, Integer>() {
@@ -110,6 +106,15 @@ public class BytecodeUtil {
         }
 
         return Optional.empty();
+    }
+
+    public static Optional<MethodNode> findMethod(ClassNode class_, String owner, String name, String desc) {
+        if (!owner.equals(class_.name))
+            return Optional.empty();
+
+        return class_.methods.stream()
+                .filter(m -> m.name.equals(name) && m.desc.equals(desc))
+                .findFirst();
     }
 
     // copy [start, end) and insert behind target

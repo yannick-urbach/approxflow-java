@@ -93,9 +93,6 @@ public class ParameterOutput extends Transformation {
         );
         class_.fields.add(counter);
 
-        LabelNode startLabel = new LabelNode();
-        LabelNode endLabel = new LabelNode();
-
         MethodNode overflowMethod = new MethodNode(
                 Opcodes.ASM5,
                 Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC,
@@ -114,26 +111,32 @@ public class ParameterOutput extends Transformation {
                         }});
                     }}
             };
+
+            instructions.add(new LabelNode());
+            instructions.add(new InsnNode(Opcodes.RETURN));
+            instructions.add(new LabelNode());
+
             maxLocals = 1;
             localVariables = new ArrayList<LocalVariableNode>() {{
-                new LocalVariableNode(
+                add(new LocalVariableNode(
                         parameter.parameter.name,
                         parameter.parameterType.asTypeSpecifierString(),
                         null,
-                        startLabel,
-                        endLabel,
+                        (LabelNode) instructions.getFirst(),
+                        (LabelNode) instructions.getFirst(),
                         0
-                );
+                ));
             }};
+
             parameters = new ArrayList<ParameterNode>() {{
                 add(new ParameterNode(parameter.parameter.name, 0));
             }};
-            instructions.add(new InsnNode(Opcodes.RETURN));
         }};
 
         class_.methods.add(overflowMethod);
 
-
+        LabelNode startLabel = new LabelNode();
+        LabelNode endLabel = new LabelNode();
         LabelNode elseLabel = new LabelNode();
 
         InsnList newInstructions = new InsnList() {{
@@ -157,13 +160,13 @@ public class ParameterOutput extends Transformation {
             add(new InsnNode(Opcodes.ICONST_1));
             add(new InsnNode(Opcodes.IADD));
             add(new FieldInsnNode(Opcodes.PUTSTATIC, class_.name, counterName, "I"));
-            add(new IntInsnNode(parameter.parameterType.getLoadLocalOpcode(), parameter.parameterIndex));
+            add(new VarInsnNode(parameter.parameterType.getLoadLocalOpcode(), parameter.parameterIndex));
             add(new InsnNode(parameter.parameterType.getArrayStoreOpcode()));
             add(new JumpInsnNode(Opcodes.GOTO, endLabel));
 
             // else
             add(elseLabel);
-            add(new IntInsnNode(parameter.parameterType.getLoadLocalOpcode(), parameter.parameterIndex));
+            add(new VarInsnNode(parameter.parameterType.getLoadLocalOpcode(), parameter.parameterIndex));
             add(new MethodInsnNode(Opcodes.INVOKESTATIC, class_.name, overflowMethod.name, overflowMethod.desc));
 
             add(endLabel);

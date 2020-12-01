@@ -66,6 +66,7 @@ public class Main implements Runnable {
             add(new AssertToAssume());
             add(new AddDummyThrow());
             add(new UnrollLoops());
+            add(new InlineMethods());
     }};
 
     private static final List<Scanner<IntStream>> relevantVariableScanners = new ArrayList<Scanner<IntStream>>(){{
