@@ -23,6 +23,7 @@ public class AssertToAssume extends Transformation {
             method.instructions.remove(aet);
 
             InsnList assumeFalse = new InsnList();
+            assumeFalse.add(new InsnNode(Opcodes.POP));
             assumeFalse.add(new LdcInsnNode(false));
             assumeFalse.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "org/cprover/CProver", "assume", "(Z)V"));
             method.instructions.insert(before, assumeFalse);
