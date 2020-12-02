@@ -1,6 +1,6 @@
 import urbachyannick.approxflow.*;
 
-public class InlineMethodsSample {
+public class Program {
 
     public static void out(@PublicOutput(maxInstances = 10) boolean value) {
         System.out.println(value);

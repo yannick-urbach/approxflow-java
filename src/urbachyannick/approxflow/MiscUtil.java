@@ -2,6 +2,8 @@ package urbachyannick.approxflow;
 
 import urbachyannick.approxflow.cnf.TrivialMappingValue;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -36,5 +38,12 @@ public class MiscUtil {
             return o1;
         else
             return o2;
+    }
+
+    public static String throwableToString(Throwable t) {
+        StringWriter stringWriter = new StringWriter();
+        PrintWriter printWriter = new PrintWriter(stringWriter);
+        t.printStackTrace(printWriter);
+        return stringWriter.toString();
     }
 }

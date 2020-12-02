@@ -1,6 +1,6 @@
 import urbachyannick.approxflow.*;
 
-public class MethodOfInterestSample {
+public class Program {
 
     @MethodOfInterest
     public static long doSomething(int param1, boolean param2) {

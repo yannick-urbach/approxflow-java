@@ -1,6 +1,6 @@
 import urbachyannick.approxflow.*;
 
-public class OutVariableSample {
+public class Program {
 
     @PublicOutput
     public static int out;
@@ -11,6 +11,6 @@ public class OutVariableSample {
     }
 
     public static void main(String[] args) {
-        out = in() | 0xFF;
+        out = in();
     }
 }

@@ -1,6 +1,6 @@
 import urbachyannick.approxflow.*;
 
-public class OutMethodSample {
+public class Program {
 
     @PrivateInput
     public static boolean in() {

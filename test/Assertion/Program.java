@@ -1,9 +1,6 @@
 import urbachyannick.approxflow.*;
 
-public class AssertionsSample {
-    private static String s1 = "Hello ";
-    private static String s2 = "World!";
-
+public class Program {
     @PublicOutput
     private static boolean outB;
     @PublicOutput
