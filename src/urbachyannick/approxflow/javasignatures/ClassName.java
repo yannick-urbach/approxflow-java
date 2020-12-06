@@ -1,5 +1,7 @@
 package urbachyannick.approxflow.javasignatures;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
@@ -45,6 +47,13 @@ public class ClassName implements TypeSpecifier {
     @Override
     public String asTypeSpecifierString()  {
         return "L" + String.join("/", parts) + ";";
+    }
+
+    public Path asPath(String extension) {
+        String[] packageParts = Arrays.copyOfRange(parts, 0, parts.length - 1);
+        Path path = Paths.get("", packageParts).resolve(parts[parts.length - 1] + extension);
+
+        return Paths.get("", path.toString());
     }
 
     @Override

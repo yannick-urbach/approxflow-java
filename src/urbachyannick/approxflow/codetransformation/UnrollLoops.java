@@ -3,17 +3,18 @@ package urbachyannick.approxflow.codetransformation;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
 
-import java.io.IOException;
 import java.util.*;
 
 import static urbachyannick.approxflow.MiscUtil.or;
 import static urbachyannick.approxflow.codetransformation.BytecodeUtil.getAnnotation;
 import static urbachyannick.approxflow.codetransformation.BytecodeUtil.getAnnotationValue;
 
-public class UnrollLoops extends Transformation {
+public class UnrollLoops extends Transformation.PerClassNoExcept {
 
     @Override
-    public void apply(ClassNode sourceClass, ClassNode targetClass) throws IOException, InvalidTransformationException {
+    protected ClassNode applyToClass(ClassNode sourceClass) {
+        ClassNode targetClass = new ClassNode(Opcodes.ASM5);
+
         sourceClass.accept(targetClass);
 
         Optional<AnnotationNode> classAnnotation = getAnnotation(sourceClass.visibleAnnotations, "Lurbachyannick/approxflow/Unroll;");
@@ -25,6 +26,8 @@ public class UnrollLoops extends Transformation {
 
             applyToInstructions(m.instructions, or(methodIterations, classIterations).map(i -> (int) i));
         }
+
+        return targetClass;
     }
 
     private static boolean isCall(AbstractInsnNode instruction) {

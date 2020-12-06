@@ -6,16 +6,27 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
-import urbachyannick.approxflow.Unreachable;
 import urbachyannick.approxflow.javasignatures.MutableInteger;
 import urbachyannick.approxflow.javasignatures.TypeSpecifier;
 
-import java.io.IOException;
-import java.text.ParseException;
+import java.util.Iterator;
+import java.util.stream.Stream;
 
-public class ReturnValueInput extends Transformation {
+public class ReturnValueInput implements Transformation {
     @Override
-    public void apply(ClassNode sourceClass, ClassNode targetClass) throws IOException, InvalidTransformationException {
+    public Stream<ClassNode> apply(Stream<ClassNode> sourceClasses) throws InvalidTransformationException {
+        Stream.Builder<ClassNode> streamBuilder = Stream.builder();
+        Iterator<ClassNode> i = sourceClasses.iterator();
+
+        while (i.hasNext())
+            streamBuilder.accept(applyToClass(i.next()));
+
+        return streamBuilder.build();
+    }
+
+    private ClassNode applyToClass(ClassNode sourceClass) throws InvalidTransformationException {
+        ClassNode targetClass = new ClassNode(Opcodes.ASM5);
+
         sourceClass.accept(targetClass);
 
         for (int i = 0; i < sourceClass.methods.size(); ++i) {
@@ -49,5 +60,7 @@ public class ReturnValueInput extends Transformation {
 
             targetMethod.instructions.add(new InsnNode(returnType.asPrimitive().getReturnOpcode()));
         }
+
+        return targetClass;
     }
 }

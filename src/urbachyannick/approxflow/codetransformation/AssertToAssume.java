@@ -3,16 +3,21 @@ package urbachyannick.approxflow.codetransformation;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
 
-import java.io.IOException;
+import java.util.stream.Stream;
 
-public class AssertToAssume extends Transformation {
+public class AssertToAssume implements Transformation {
 
     @Override
-    public void apply(ClassNode sourceClass, ClassNode targetClass) throws IOException, InvalidTransformationException {
-        sourceClass.accept(targetClass);
+    public Stream<ClassNode> apply(Stream<ClassNode> sourceClasses) {
+        return sourceClasses.map(sourceClass -> {
+            ClassNode targetClass = new ClassNode(Opcodes.ASM5);
+            sourceClass.accept(targetClass);
 
-        for (MethodNode m : targetClass.methods)
-            applyToMethod(m);
+            for (MethodNode m : targetClass.methods)
+                applyToMethod(m);
+
+            return targetClass;
+        });
     }
 
     private void applyToMethod(MethodNode method) {

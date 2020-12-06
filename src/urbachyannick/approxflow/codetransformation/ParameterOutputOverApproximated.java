@@ -5,15 +5,16 @@ import urbachyannick.approxflow.cnf.Literal;
 import urbachyannick.approxflow.cnf.MappedProblem;
 import urbachyannick.approxflow.javasignatures.*;
 
-import java.io.IOException;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
-public class ParameterOutputOverApproximated extends Scanner<IntStream> {
+public class ParameterOutputOverApproximated implements Scanner<IntStream> {
 
     @Override
-    public IntStream scan(ClassNode sourceClass, MappedProblem problem) throws IOException {
+    public IntStream scan(Stream<ClassNode> sourceClasses, MappedProblem problem) {
 
-        return ParameterOutput.getOutputParameters(sourceClass)
+        return sourceClasses.flatMapToInt(sourceClass ->
+                ParameterOutput.getOutputParameters(sourceClass)
                 .filter(parameter -> parameter.maxInstances <= 0)
                 .flatMapToInt(parameter -> {
 
@@ -35,6 +36,7 @@ public class ParameterOutputOverApproximated extends Scanner<IntStream> {
                                             .filter(value -> !value.isTrivial())
                                             .mapToInt(value -> ((Literal) value).getVariable())
                             );
-                });
+                })
+        );
     }
 }

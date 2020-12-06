@@ -33,8 +33,7 @@ hs_err_pid*
 /out/*
 
 # generated during testing
-*.cnf
-*.cnf.scope
+**/intermediate
 cusp_log.txt
 result.txt
 

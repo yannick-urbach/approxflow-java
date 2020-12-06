@@ -1,17 +1,14 @@
 package urbachyannick.approxflow;
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
+import org.objectweb.asm.tree.ClassNode;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 import picocli.CommandLine;
-import urbachyannick.approxflow.cnf.IO;
-import urbachyannick.approxflow.cnf.MappedProblem;
-import urbachyannick.approxflow.cnf.Scope;
-import urbachyannick.approxflow.cnf.ScopedMappedProblem;
+import urbachyannick.approxflow.cnf.*;
 import urbachyannick.approxflow.codetransformation.*;
-import urbachyannick.approxflow.codetransformation.Scanner;
-import urbachyannick.approxflow.modelcounting.ModelCounter;
-import urbachyannick.approxflow.modelcounting.ModelCountingException;
+import urbachyannick.approxflow.codetransformation.Compiler;
+import urbachyannick.approxflow.informationflow.DefaultAnalyzer;
+import urbachyannick.approxflow.informationflow.FlowAnalyzer;
 import urbachyannick.approxflow.modelcounting.ScalMC;
 
 import javax.xml.parsers.*;
@@ -20,9 +17,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static picocli.CommandLine.*;
@@ -45,15 +40,8 @@ public class Main implements Runnable {
     @ArgGroup(exclusive = true, multiplicity = "1")
     OperationMode operationMode;
     static class OperationMode {
-        @ArgGroup(exclusive = false, multiplicity = "1")
-        Regular regular;
-        static class Regular {
-            @Parameters(index = "0", paramLabel = "class", description = "main class with a static ___val variable for output (must be in the default package)")
-            private String className;
-
-            @Parameters(index = "1", paramLabel = "classpath", description = "classpath containing the main class")
-            private Path classpath;
-        }
+        @Parameters(index = "0", paramLabel = "classpath", description = "classpath containing the source files")
+        private Path classpath;
 
         @Option(names = {"--tests"}, description = "run tests")
         private boolean test;
@@ -69,6 +57,9 @@ public class Main implements Runnable {
     @Option(names = {"--write-cnf"}, description = "write the cnf file to disk")
     private boolean writeCnf;
 
+    @Option(names = {"--keep-intermediate"}, description = "keep intermediate results")
+    private boolean keepIntermediate;
+
     @Option(names = {"-c", "--cnf-only"}, description = "print only the cnf")
     private boolean cnfOnly;
 
@@ -82,98 +73,75 @@ public class Main implements Runnable {
 
 
 
-    // region --- Configuration ---
-
-    private static final List<Transformation> transformations = new ArrayList<Transformation>(){{
-            add(new MethodOfInterestTransform());
-            add(new ReturnValueInput());
-            add(new ParameterOutput());
-            add(new AssertToAssume());
-            add(new AddDummyThrow());
-            add(new UnrollLoops());
-            add(new InlineMethods());
-    }};
-
-    private static final List<Scanner<IntStream>> relevantVariableScanners = new ArrayList<Scanner<IntStream>>(){{
-            add(new OutputVariable());
-            add(new OutputArray());
-            add(new ParameterOutputOverApproximated());
-    }};
-
-    private static final ModelCounter modelCounter = new ScalMC();
-
-    // endregion
-
-
 
     /**
      * Actual program. Called by PicoCLI.
      */
     @Override
     public void run() {
-        if (operationMode.test) {
-            runTests();
-            return;
-        }
+        Compiler compiler = new Javac();
 
-        try {
-            double informationFlow = analyzeInformationFlow(operationMode.regular.className, operationMode.regular.classpath);
+        FlowAnalyzer analyzer = new DefaultAnalyzer(
+                new Jbmc(partialLoops, unwind),
+                Stream.of(
+                        new MethodOfInterestTransform(),
+                        new ReturnValueInput(),
+                        new ParameterOutput(),
+                        new AssertToAssume(),
+                        new AddDummyThrow(),
+                        new UnrollLoops(),
+                        new InlineMethods()
+                ),
+                Stream.of(
+                        new OutputVariable(),
+                        new OutputArray(),
+                        new ParameterOutputOverApproximated()
+                ),
+                new ScalMC()
+        );
+
+        if (operationMode.test)
+            runTests(compiler, analyzer);
+        else
+            runRegular(compiler, analyzer);
+    }
+
+
+    public void runRegular(Compiler compiler, FlowAnalyzer analyzer) {
+        IOCallbacks ioCallbacks = new IOCallbacks() {
+            @Override
+            public Path createTemporaryFileImpl(String name) {
+                return operationMode.classpath.resolve(Paths.get("intermediate", name));
+            }
+
+            @Override
+            public Path createTemporaryDirectoryImpl(String name) {
+                return operationMode.classpath.resolve(Paths.get("intermediate", name));
+            }
+
+            @Override
+            protected boolean shouldDeleteTemporary(String name) {
+                return !keepIntermediate;
+            }
+        };
+
+        try (IOCallbacks c = ioCallbacks) {
+            Stream<ClassNode> classes = compiler.compile(operationMode.classpath, c);
+            double informationFlow = analyzer.analyzeInformationFlow(classes, c);
 
             if (!cnfOnly)
                 System.out.println("Approximated flow is: " + informationFlow);
         } catch(Fail f) {
             fail(f);
-        }
-
-
-    }
-
-    public double analyzeInformationFlow(String className, Path classpath) {
-        classpath = classpath.toAbsolutePath();
-
-        buildClass(className, classpath);
-        transformBytecode(className, classpath);
-
-        MappedProblem problem = generateCnf(className, classpath);
-
-        if (writeCnf) {
-            try {
-                IO.write(problem, classpath.resolve(className + ".cnf"));
-            } catch (IOException e) {
-                throw new Fail("Can not write cnf file to disk");
-            }
-        }
-
-        List<Integer> variables = getRelevantVariables(className, classpath, problem)
-                .distinct()
-                .boxed()
-                .collect(Collectors.toList());
-
-        if (variables.isEmpty())
-            throw new Fail("No variables for which to solve. Information flow might be 0.");
-
-        Scope scope = new Scope(variables.stream().mapToInt(Integer::intValue));
-        ScopedMappedProblem scopedMappedProblem = new ScopedMappedProblem(problem, scope);
-
-        if (writeCnf) {
-            try {
-                IO.write(scopedMappedProblem, classpath.resolve(className + ".cnf"));
-            } catch (IOException e) {
-                throw new Fail("Can not write cnf file to disk");
-            }
-        }
-
-        if (!cnfOnly) {
-            try {
-                double solutions = modelCounter.count(scopedMappedProblem);
-                return Math.log(solutions) / Math.log(2);
-            } catch (ModelCountingException e) {
-                throw new Fail("Error during model counting", e);
-            }
-        } else {
-            return -1;
+        } catch (CompilationError e) {
+            fail("Failed to compile source files", e);
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.err.println("Could not delete temporary files and/or directories");
         }
     }
+
+
 
     private static class TestResult {
         public boolean skipped;
@@ -182,7 +150,7 @@ public class Main implements Runnable {
         public Path testPath;
     }
 
-    private void runTests() {
+    private void runTests(Compiler compiler, FlowAnalyzer analyzer) {
         try {
             Path testRoot = Paths.get("test").toAbsolutePath();
 
@@ -190,11 +158,9 @@ public class Main implements Runnable {
                     .list(testRoot)
                     .filter(t ->
                             Files.isDirectory(t) &&
-                            Files.exists(t.resolve("Program.java")) &&
                             Files.exists(t.resolve("config.xml"))
                     )
-                    .map(this::runTest)
-                    .collect(Collectors.toList())
+                    .map(t -> runTest(t, compiler, analyzer))
                     .forEach(r -> {
                         if (r.skipped)
                             System.out.println("SKIPPED: " + r.testPath.getFileName());
@@ -210,7 +176,7 @@ public class Main implements Runnable {
 
     }
 
-    private TestResult runTest(Path testDirectory) {
+    private TestResult runTest(Path testDirectory, Compiler compiler, FlowAnalyzer analyzer) {
         Path configFile = testDirectory.resolve("config.xml");
 
         double minFlow;
@@ -243,8 +209,26 @@ public class Main implements Runnable {
             }};
         }
 
-        try {
-            double informationFlow = analyzeInformationFlow("Program", testDirectory);
+        IOCallbacks ioCallbacks = new IOCallbacks() {
+            @Override
+            protected Path createTemporaryFileImpl(String name) {
+                return testDirectory.resolve(Paths.get("intermediate", name));
+            }
+
+            @Override
+            protected Path createTemporaryDirectoryImpl(String name) {
+                return testDirectory.resolve(Paths.get("intermediate", name));
+            }
+
+            @Override
+            protected boolean shouldDeleteTemporary(String name) {
+                return !keepIntermediate;
+            }
+        };
+
+        try (IOCallbacks c = ioCallbacks) {
+            Stream<ClassNode> classes = compiler.compile(testDirectory, c);
+            double informationFlow = analyzer.analyzeInformationFlow(classes, c);
 
             if (informationFlow < minFlow - 0.2) {
                 return new TestResult() {{
@@ -283,102 +267,6 @@ public class Main implements Runnable {
         } catch (IOException e) {
             fail("Can not write test result");
         }
-    }
-
-    /**
-     * Builds the main class using javac.
-     */
-    private void buildClass(String className, Path classpath) {
-        Path resPath = Paths.get("res").toAbsolutePath();
-
-        runCommand(
-                classpath,
-                "javac",
-                "-classpath", resPath.resolve("jbmc-core-models.jar").toString() + ":" + resPath.toString(),
-                "-g",
-                "-parameters",
-                className + ".java"
-        );
-    }
-
-    private void transformBytecode(String className, Path classpath) {
-        Path classFilePath = classpath.resolve(className + ".class");
-
-        try {
-            Transformation.applyMultiple(classFilePath, classFilePath, transformations.stream());
-        } catch (IOException | InvalidTransformationException e) {
-            throw new Fail("Failed to transform bytecode", e);
-        }
-    }
-
-    /**
-     * Generates the CNF file from the compiled class
-     *
-     * @return the CNF file
-     */
-    private MappedProblem generateCnf(String className, Path classpath) {
-        try {
-            Path cnfFilePath = classpath.resolve(className + ".cnf");
-
-            cnfFilePath.toAbsolutePath();
-
-            List<String> command = new ArrayList<>();
-            command.add("jbmc");
-            command.add(className);
-            command.add("--classpath");
-            command.add("./:" + Paths.get("res/jbmc-core-models.jar").toAbsolutePath().toString());
-            command.add("--dimacs");
-            command.add("--outfile");
-            command.add(cnfFilePath.toAbsolutePath().toString());
-
-            if (partialLoops)
-                command.add("--partial-loops");
-
-            if (unwind > 0) {
-                command.add("--unwind");
-                command.add(Integer.toString(unwind));
-            }
-
-            runCommand(classpath, command);
-            MappedProblem problem = IO.readMappedProblem(cnfFilePath);
-            Files.delete(cnfFilePath);
-            return problem;
-        } catch (IOException e) {
-            throw new Fail("Failed to generate CNF", e);
-        }
-    }
-
-    private IntStream getRelevantVariables(String className, Path classpath, MappedProblem problem) {
-        Path classFilePath = classpath.resolve(className + ".class");
-
-        return relevantVariableScanners.stream().flatMapToInt(s -> {
-            try {
-                return s.scan(classFilePath, problem);
-            } catch (IOException e) {
-                throw new Fail("Failed to scan bytecode for outputs", e);
-            }
-        });
-    }
-
-    // helper to run a *necessary* command (exits with fail message if not successful)
-    private static void runCommand(Path workingDirectory, List<String> command) {
-        try {
-            Process process = new ProcessBuilder()
-                    .command(command)
-                    .directory(workingDirectory.toFile())
-                    .inheritIO()
-                    .start();
-            process.waitFor();
-
-            if (process.exitValue() != 0)
-                throw new Fail(command.stream().findFirst().orElse("command") + " returned error code " + process.exitValue());
-        } catch (IOException | InterruptedException e) {
-            throw new Fail("Failed to run " + command.stream().findFirst().orElse("command"));
-        }
-    }
-
-    private static void runCommand(Path workingDirectory, String... command) {
-        runCommand(workingDirectory, Arrays.asList(command));
     }
 
     // helper to exit with fail message (never returns)

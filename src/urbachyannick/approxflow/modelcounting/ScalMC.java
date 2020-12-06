@@ -1,5 +1,6 @@
 package urbachyannick.approxflow.modelcounting;
 
+import urbachyannick.approxflow.IOCallbacks;
 import urbachyannick.approxflow.cnf.IO;
 import urbachyannick.approxflow.cnf.ScopedMappedProblem;
 
@@ -9,61 +10,58 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ScalMC implements ModelCounter {
 
     @Override
-    public double count(ScopedMappedProblem problem) throws ModelCountingException {
+    public double count(ScopedMappedProblem problem, IOCallbacks ioCallbacks) throws ModelCountingException {
         Path cnfFilePath;
+        Path outputPath;
 
         try {
-            cnfFilePath = Files.createTempFile("temporary-cnf-file", "");
+            cnfFilePath = ioCallbacks.createTemporaryFile("scalmc-input.cnf");
+            outputPath = ioCallbacks.createTemporaryFile("sclamc-log.txt");
+            ioCallbacks.createTemporaryFile("scalmc-input.cnf.scope");
             IO.write(problem, cnfFilePath);
         } catch (IOException e) {
             throw new ModelCountingException("Can not write temporary CNF file", e);
         }
 
         try {
-            Process process = new ProcessBuilder()
+            ProcessBuilder.Redirect out = ProcessBuilder.Redirect.to(outputPath.toFile());
+
+            new ProcessBuilder()
                     .command(Paths.get("util/scalmc").toAbsolutePath().toString(), cnfFilePath.toString())
-                    .redirectOutput(ProcessBuilder.Redirect.PIPE)
-                    .start();
+                    .redirectOutput(out)
+                    .redirectError(out)
+                    .start()
+                    .waitFor();
 
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                String line;
-
-                while ((line = reader.readLine()) != null) {
-                    System.out.println(line);
-
-                    if (line.startsWith("Number of solutions is:")) {
-                        Matcher matcher = Pattern.compile("Number of solutions is: (\\d+) x (\\d+)\\^(\\d+)").matcher(line);
-
-                        if (!matcher.find())
-                            throw new ModelCountingException("Failed to parse result of ScalMC");
-
-                        int multiplier = Integer.parseInt(matcher.group(1));
-                        int base = Integer.parseInt(matcher.group(2));
-                        int exponent = Integer.parseInt(matcher.group(3));
-                        double solutions = multiplier * Math.pow(base, exponent);
-                        return solutions;
-                    }
-                }
-            } finally {
-                process.waitFor();
-            }
         } catch (IOException | InterruptedException e) {
             throw new ModelCountingException("Failed to run SAT solver", e);
         }
 
-        try {
-            Files.delete(cnfFilePath);
-            Files.delete(cnfFilePath.resolveSibling(cnfFilePath.getFileName() + ".scope"));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        Pattern pattern = Pattern.compile("Number of solutions is: (\\d+) x (\\d+)\\^(\\d+)");
 
-        throw new ModelCountingException("Failed to parse result of ScalMC");
+        try {
+            return Files.lines(outputPath)
+                    .map(line -> pattern.matcher(line))
+                    .filter(Matcher::find)
+                    .map(matcher -> {
+                        int multiplier = Integer.parseInt(matcher.group(1));
+                        int base = Integer.parseInt(matcher.group(2));
+                        int exponent = Integer.parseInt(matcher.group(3));
+
+                        return multiplier * Math.pow(base, exponent);
+                    })
+                    .findFirst()
+                    .orElseThrow(() -> new ModelCountingException("Failed to parse result of ScalMC"));
+
+        } catch (IOException e) {
+            throw new ModelCountingException("Failed to read SAT solver result", e);
+        }
     }
 }

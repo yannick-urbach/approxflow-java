@@ -7,19 +7,29 @@ import urbachyannick.approxflow.javasignatures.MutableInteger;
 import urbachyannick.approxflow.javasignatures.PrimtiveType;
 import urbachyannick.approxflow.javasignatures.TypeSpecifier;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static urbachyannick.approxflow.MiscUtil.or;
 import static urbachyannick.approxflow.codetransformation.BytecodeUtil.*;
 
-public class InlineMethods extends Transformation {
+public class InlineMethods implements Transformation {
 
     @Override
-    public void apply(ClassNode sourceClass, ClassNode targetClass) throws IOException, InvalidTransformationException {
-        CV visitor = new CV(sourceClass, Opcodes.ASM5, targetClass);
-        sourceClass.accept(visitor);
+    public Stream<ClassNode> apply(Stream<ClassNode> sourceClasses) {
+        List<ClassNode> classList = sourceClasses.collect(Collectors.toList());
+
+        return classList.stream().map(sourceClass -> {
+            Optional<AnnotationNode> annotationNode = getAnnotation(sourceClass.visibleAnnotations, "Lurbachyannick/approxflow/Inline;");
+            Optional<Integer> maxRecursions = annotationNode.flatMap(a -> getAnnotationValue(a, "recursions")).map(v -> (int) v);
+
+            ClassNode targetClass = new ClassNode(Opcodes.ASM5);
+            CV visitor = new CV(classList, maxRecursions, Opcodes.ASM5, targetClass);
+            sourceClass.accept(visitor);
+
+            return targetClass;
+        });
     }
 
     private static class RecursionDepthManager {
@@ -35,20 +45,18 @@ public class InlineMethods extends Transformation {
     }
 
     private static class CV extends ClassVisitor {
-        private final ClassNode class_;
+        private final List<ClassNode> classes;
         private final Optional<Integer> maxRecursions;
 
-        public CV(ClassNode class_, int api, ClassVisitor classVisitor) {
+        public CV(List<ClassNode> classes, Optional<Integer> maxRecursions, int api, ClassVisitor classVisitor) {
             super(api, classVisitor);
-            this.class_ = class_;
-
-            Optional<AnnotationNode> annotationNode = getAnnotation(class_.visibleAnnotations, "Lurbachyannick/approxflow/Inline;");
-            maxRecursions = annotationNode.flatMap(a -> getAnnotationValue(a, "recursions")).map(v -> (int) v);
+            this.classes = classes;
+            this.maxRecursions = maxRecursions;
         }
 
         @Override
         public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
-            MV visitor = new MV(class_, maxRecursions, api, super.visitMethod(access, name, descriptor, signature, exceptions));
+            MV visitor = new MV(classes, maxRecursions, api, super.visitMethod(access, name, descriptor, signature, exceptions));
             LocalVariablesSorter sorter = new LocalVariablesSorter(access, descriptor, visitor);
             visitor.sorter = sorter;
             return sorter;
@@ -58,12 +66,12 @@ public class InlineMethods extends Transformation {
     private static class MV extends MethodVisitor {
         public LocalVariablesSorter sorter;
         private final RecursionDepthManager recursionDepths;
-        private final ClassNode class_;
+        private final List<ClassNode> classes;
         private final Optional<Integer> classMaxRecursions;
 
-        public MV(ClassNode class_, Optional<Integer> classMaxRecursions, int api, MethodVisitor methodVisitor) {
+        public MV(List<ClassNode> classes, Optional<Integer> classMaxRecursions, int api, MethodVisitor methodVisitor) {
             super(api, methodVisitor);
-            this.class_ = class_;
+            this.classes = classes;
             recursionDepths = new RecursionDepthManager();
             this.classMaxRecursions = classMaxRecursions;
         }
@@ -84,7 +92,8 @@ public class InlineMethods extends Transformation {
         @Override
         public void visitMethodInsn(int opcode, String owner, String name, String descriptor, boolean isInterface) {
 
-            Optional<MethodNode> calledMethodOptional = findMethod(class_, owner, name, descriptor);
+            Optional<ClassNode> ownerClassOptional = findClass(classes.stream(), owner);
+            Optional<MethodNode> calledMethodOptional = ownerClassOptional.flatMap(c -> findMethod(c, owner, name, descriptor));
             Optional<AnnotationNode> annotationNode = calledMethodOptional.flatMap(m -> getAnnotation(m.visibleAnnotations, "Lurbachyannick/approxflow/Inline;"));
             Optional<Integer> maxRecursions = or(
                     annotationNode.flatMap(a -> getAnnotationValue(a, "recursions")).map(v -> (int) v),

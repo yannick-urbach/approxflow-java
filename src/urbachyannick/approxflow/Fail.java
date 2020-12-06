@@ -6,6 +6,6 @@ public class Fail extends RuntimeException {
     }
 
     public Fail(String message, Exception reason) {
-        super("FAIL: " + message);
+        super("FAIL: " + message, reason);
     }
 }

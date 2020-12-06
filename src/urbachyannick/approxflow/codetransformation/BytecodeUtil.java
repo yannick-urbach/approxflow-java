@@ -5,6 +5,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 public class BytecodeUtil {
     private static final Map<Integer, Integer> jumpInversions = new HashMap<Integer, Integer>() {
@@ -49,6 +50,16 @@ public class BytecodeUtil {
                         m.desc.equals("([Ljava/lang/String;)V") &&
                         hasFlag(m.access, Opcodes.ACC_STATIC)
                 ).findFirst();
+    }
+
+    public static Optional<ClassNode> findClassWithMainMethod(Stream<ClassNode> classes) {
+        return classes.filter(classNode -> classNode.methods.stream()
+                .anyMatch(m ->
+                        m.name.equals("main") &&
+                        m.desc.equals("([Ljava/lang/String;)V") &&
+                        hasFlag(m.access, Opcodes.ACC_STATIC)
+                )
+        ).findFirst();
     }
 
     public static boolean hasFlag(int value, int flag) {
@@ -114,6 +125,12 @@ public class BytecodeUtil {
 
         return class_.methods.stream()
                 .filter(m -> m.name.equals(name) && m.desc.equals(desc))
+                .findFirst();
+    }
+
+    public static Optional<ClassNode> findClass(Stream<ClassNode> classes, String name) {
+        return classes
+                .filter(c -> c.name.equals(name))
                 .findFirst();
     }
 

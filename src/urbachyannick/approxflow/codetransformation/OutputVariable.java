@@ -6,25 +6,28 @@ import urbachyannick.approxflow.CnfException;
 import urbachyannick.approxflow.cnf.*;
 import urbachyannick.approxflow.javasignatures.*;
 
-import java.io.IOException;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
 import static urbachyannick.approxflow.codetransformation.BytecodeUtil.*;
 
-public class OutputVariable extends Scanner<IntStream> {
+public class OutputVariable implements Scanner<IntStream> {
 
     @Override
-    public IntStream scan(ClassNode sourceClass, MappedProblem problem) throws IOException {
-        return sourceClass.fields.stream()
-                .filter(f -> (
-                        hasFlag(f.access, Opcodes.ACC_STATIC) &&
-                        TypeSpecifier.parse(f.desc, new MutableInteger(0)).isPrimitive() &&
-                        hasAnnotation(f.visibleAnnotations, "Lurbachyannick/approxflow/PublicOutput;")
-                ))
-                .map(f -> new JavaSignature(
-                        ClassName.tryParseFromTypeSpecifier("L" + sourceClass.name + ";", new MutableInteger(0)),
-                        new FieldAccess(f.name)
-                ))
-                .flatMapToInt(s -> getVariablesForSignature(problem, s));
+    public IntStream scan(Stream<ClassNode> sourceClasses, MappedProblem problem) {
+        return sourceClasses.flatMapToInt(sourceClass ->
+                sourceClass.fields.stream()
+                        .filter(f -> (
+                                hasFlag(f.access, Opcodes.ACC_STATIC) &&
+                                TypeSpecifier.parse(f.desc, new MutableInteger(0)).isPrimitive() &&
+                                hasAnnotation(f.visibleAnnotations, "Lurbachyannick/approxflow/PublicOutput;")
+                        ))
+                        .map(f -> new JavaSignature(
+                                ClassName.tryParseFromTypeSpecifier("L" + sourceClass.name + ";", new MutableInteger(0)),
+                                new FieldAccess(f.name)
+                        ))
+                        .flatMapToInt(s -> getVariablesForSignature(problem, s))
+        );
     }
 
     private IntStream getVariablesForSignature(MappedProblem problem, JavaSignature signature) {

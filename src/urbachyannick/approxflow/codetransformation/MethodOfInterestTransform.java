@@ -3,21 +3,20 @@ package urbachyannick.approxflow.codetransformation;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
-import urbachyannick.approxflow.Unreachable;
 import urbachyannick.approxflow.javasignatures.MutableInteger;
 import urbachyannick.approxflow.javasignatures.TypeSpecifier;
 
-import java.io.IOException;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static urbachyannick.approxflow.codetransformation.BytecodeUtil.*;
 
-public class MethodOfInterestTransform extends Transformation {
+public class MethodOfInterestTransform extends Transformation.PerClass {
+
     @Override
-    public void apply(ClassNode sourceClass, ClassNode targetClass) throws IOException, InvalidTransformationException {
+    protected ClassNode applyToClass(ClassNode sourceClass) throws InvalidTransformationException {
+        ClassNode targetClass = new ClassNode(Opcodes.ASM5);
         sourceClass.accept(targetClass); // copy over
 
         // find methods with annotation
@@ -26,7 +25,7 @@ public class MethodOfInterestTransform extends Transformation {
                 .collect(Collectors.toList());
 
         if (methods.size() == 0)
-            return;
+            return targetClass;
 
         if (methods.size() > 1)
             throw new InvalidTransformationException("Must have at most one method of interest");
@@ -100,5 +99,7 @@ public class MethodOfInterestTransform extends Transformation {
         );
 
         main.instructions.add(new InsnNode(Opcodes.RETURN));
+
+        return targetClass;
     }
 }
