@@ -1,8 +1,6 @@
 package urbachyannick.approxflow.javasignatures;
 
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class Identifiers {
     public static String tryParseUnqualified(String input, MutableInteger inoutOffset) {

@@ -1,12 +1,10 @@
 package urbachyannick.approxflow.codetransformation;
 
 import org.objectweb.asm.tree.ClassNode;
-import urbachyannick.approxflow.cnf.Literal;
-import urbachyannick.approxflow.cnf.MappedProblem;
+import urbachyannick.approxflow.cnf.*;
 import urbachyannick.approxflow.javasignatures.*;
 
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
+import java.util.stream.*;
 
 public class ParameterOutputOverApproximated implements Scanner<IntStream> {
 

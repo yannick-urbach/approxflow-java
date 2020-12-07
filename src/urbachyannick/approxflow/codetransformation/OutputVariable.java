@@ -6,8 +6,7 @@ import urbachyannick.approxflow.CnfException;
 import urbachyannick.approxflow.cnf.*;
 import urbachyannick.approxflow.javasignatures.*;
 
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
+import java.util.stream.*;
 
 import static urbachyannick.approxflow.codetransformation.BytecodeUtil.*;
 

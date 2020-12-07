@@ -1,20 +1,14 @@
 package urbachyannick.approxflow.informationflow;
 
 import org.objectweb.asm.tree.ClassNode;
-import urbachyannick.approxflow.Fail;
-import urbachyannick.approxflow.IOCallbacks;
+import urbachyannick.approxflow.*;
+import urbachyannick.approxflow.cnf.CnfException;
 import urbachyannick.approxflow.cnf.*;
-import urbachyannick.approxflow.codetransformation.InvalidTransformationException;
-import urbachyannick.approxflow.codetransformation.Scanner;
-import urbachyannick.approxflow.codetransformation.Transformation;
-import urbachyannick.approxflow.modelcounting.ModelCounter;
-import urbachyannick.approxflow.modelcounting.ModelCountingException;
+import urbachyannick.approxflow.codetransformation.*;
+import urbachyannick.approxflow.modelcounting.*;
 
-import java.io.IOException;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
+import java.util.stream.*;
 
 public class DefaultAnalyzer implements FlowAnalyzer {
     private final CnfGenerator cnfGenerator;

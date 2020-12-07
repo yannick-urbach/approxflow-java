@@ -1,8 +1,7 @@
 package urbachyannick.approxflow.cnf;
 
 import java.util.Arrays;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
+import java.util.stream.*;
 
 public class Problem {
     private final int variableCount;

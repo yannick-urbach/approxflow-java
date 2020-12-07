@@ -2,22 +2,14 @@ package urbachyannick.approxflow.codetransformation;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
-import urbachyannick.approxflow.*;
-import urbachyannick.approxflow.cnf.Literal;
-import urbachyannick.approxflow.cnf.MappedProblem;
-import urbachyannick.approxflow.cnf.TrivialMappingValue;
-import urbachyannick.approxflow.cnf.VariableMapping;
+import urbachyannick.approxflow.MiscUtil;
+import urbachyannick.approxflow.cnf.*;
 import urbachyannick.approxflow.javasignatures.*;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
+import java.util.*;
+import java.util.stream.*;
 
-import static urbachyannick.approxflow.codetransformation.BytecodeUtil.hasAnnotation;
-import static urbachyannick.approxflow.codetransformation.BytecodeUtil.hasFlag;
+import static urbachyannick.approxflow.codetransformation.BytecodeUtil.*;
 
 public class OutputArray implements Scanner<IntStream> {
     @Override

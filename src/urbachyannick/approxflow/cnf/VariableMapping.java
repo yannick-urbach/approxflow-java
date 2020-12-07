@@ -1,8 +1,6 @@
 package urbachyannick.approxflow.cnf;
 
-import urbachyannick.approxflow.javasignatures.DynamicArraySignature;
-import urbachyannick.approxflow.javasignatures.JavaSignature;
-import urbachyannick.approxflow.javasignatures.Signature;
+import urbachyannick.approxflow.javasignatures.*;
 
 import java.util.Arrays;
 import java.util.stream.Stream;

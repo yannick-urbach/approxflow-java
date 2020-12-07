@@ -1,7 +1,5 @@
 package urbachyannick.approxflow.javasignatures;
 
-import java.text.ParseException;
-
 public class FieldAccess extends MemberAccess {
     private String name;
 

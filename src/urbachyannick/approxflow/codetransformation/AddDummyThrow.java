@@ -5,7 +5,7 @@ import org.objectweb.asm.tree.*;
 
 import java.util.stream.Stream;
 
-import static urbachyannick.approxflow.codetransformation.BytecodeUtil.*;
+import static urbachyannick.approxflow.codetransformation.BytecodeUtil.findMainMethod;
 
 /**
  * Adds an assert(false) before every return statement in the main method to force jbmc to output a cnf file.

@@ -1,9 +1,7 @@
 package urbachyannick.approxflow.javasignatures;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.List;
+import java.nio.file.*;
+import java.util.*;
 
 public class ClassName implements TypeSpecifier {
     private final String[] parts;

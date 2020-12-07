@@ -3,15 +3,11 @@ package urbachyannick.approxflow.cnf;
 import urbachyannick.approxflow.FilesUtil;
 import urbachyannick.approxflow.javasignatures.Signature;
 
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.*;
+import java.nio.file.*;
 import java.util.function.Function;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
+import java.util.stream.*;
 
 public class IO {
     public static Problem readProblem(Path path) throws IOException {
@@ -93,18 +89,38 @@ public class IO {
     public static Stream<String> problemLines(Problem problem) {
         return Stream.concat(
                 Stream.of(String.format("p cnf %d %d", problem.getVariableCount(), problem.getClauseCount())),
-                problem.getClauses().map(c -> c.getLiterals().map(l -> Integer.toString((l.getValue() ? 1 : -1) * l.getVariable())).collect(Collectors.joining(" ")) + " 0")
+                problem
+                        .getClauses()
+                        .map(c -> c
+                                .getLiterals()
+                                .map(l -> Integer.toString((l.getValue() ? 1 : -1) * l.getVariable()))
+                                .collect(Collectors.joining(" "))
+                                + " 0"
+                        )
         );
     }
 
     public static Stream<String> variableTableLines(VariableTable table) {
         return table
                 .getMappings()
-                .map(m -> "c " + m.getSignature() + " " + m.getMappingValues().map(v ->
-                    v == TrivialMappingValue.TRUE ? "TRUE" :
-                    v == TrivialMappingValue.FALSE ? "FALSE" :
-                    Integer.toString((((Literal) v).getValue() ? 1 : -1) * ((Literal) v).getVariable())
-                ).collect(Collectors.joining(" ")));
+                .map(m ->
+                        String.format("c %s %s",
+                                m.getSignature(),
+                                m.getMappingValues().map(IO::mappingValueToString).collect(Collectors.joining(" "))
+                        )
+                );
+    }
+
+    private static String mappingValueToString(MappingValue value) {
+        if (value == TrivialMappingValue.TRUE)
+            return "TRUE";
+
+        if (value == TrivialMappingValue.FALSE)
+            return "FALSE";
+
+        Literal literal = (Literal) value;
+
+        return "" + (literal.getValue() ? 1 : -1) * literal.getVariable();
     }
 
     public static String cIndLine(Scope scope) {

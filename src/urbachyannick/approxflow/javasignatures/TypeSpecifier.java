@@ -1,7 +1,5 @@
 package urbachyannick.approxflow.javasignatures;
 
-import java.text.ParseException;
-
 public interface TypeSpecifier {
     String asTypeSpecifierString();
     PrimtiveType asPrimitive();

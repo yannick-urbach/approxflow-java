@@ -1,7 +1,7 @@
 package urbachyannick.approxflow.javasignatures;
 
 public class UnparsedSignature extends Signature {
-    private String text;
+    private final String text;
 
     public UnparsedSignature(String text) {
         this.text = text;

@@ -1,12 +1,8 @@
 package urbachyannick.approxflow;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.io.*;
+import java.nio.file.*;
+import java.util.*;
 
 public abstract class IOCallbacks implements Closeable {
     private static class Temporary {

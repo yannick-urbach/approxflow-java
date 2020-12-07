@@ -2,9 +2,7 @@ package urbachyannick.approxflow.cnf;
 
 import urbachyannick.approxflow.javasignatures.Signature;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Stream;
 

@@ -1,6 +1,5 @@
 package urbachyannick.approxflow.javasignatures;
 
-import java.text.ParseException;
 import java.util.Objects;
 
 public class AnonymousParameter extends FunctionCallVariable {

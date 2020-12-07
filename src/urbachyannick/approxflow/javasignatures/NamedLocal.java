@@ -1,8 +1,8 @@
 package urbachyannick.approxflow.javasignatures;
 
 public class NamedLocal extends FunctionCallVariable {
-    private String name;
-    private Long mysteryNumber; // somehow related to "start" in the local variable table, but 1 lower for some reason?
+    private final String name;
+    private final Long mysteryNumber; // somehow related to "start" in the local variable table, but 1 lower for some reason?
 
     public NamedLocal(String name) {
         this.name = name;

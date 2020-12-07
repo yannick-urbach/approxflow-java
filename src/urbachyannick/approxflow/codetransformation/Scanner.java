@@ -3,7 +3,6 @@ package urbachyannick.approxflow.codetransformation;
 import org.objectweb.asm.tree.ClassNode;
 import urbachyannick.approxflow.cnf.MappedProblem;
 
-import java.io.IOException;
 import java.util.stream.Stream;
 
 public interface Scanner<T> {

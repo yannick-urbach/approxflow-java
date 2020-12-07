@@ -1,13 +1,8 @@
 package urbachyannick.approxflow.codetransformation;
 
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.InsnNode;
-import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.MethodNode;
-import urbachyannick.approxflow.javasignatures.MutableInteger;
-import urbachyannick.approxflow.javasignatures.TypeSpecifier;
+import org.objectweb.asm.*;
+import org.objectweb.asm.tree.*;
+import urbachyannick.approxflow.javasignatures.*;
 
 import java.util.Iterator;
 import java.util.stream.Stream;

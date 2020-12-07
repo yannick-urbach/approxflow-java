@@ -2,8 +2,7 @@ package urbachyannick.approxflow.cnf;
 
 import urbachyannick.approxflow.javasignatures.Signature;
 
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
+import java.util.stream.*;
 
 public class ScopedMappedProblem {
     private final MappedProblem problem;

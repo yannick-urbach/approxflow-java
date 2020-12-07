@@ -3,13 +3,10 @@ package urbachyannick.approxflow.codetransformation;
 import org.objectweb.asm.*;
 import org.objectweb.asm.commons.LocalVariablesSorter;
 import org.objectweb.asm.tree.*;
-import urbachyannick.approxflow.javasignatures.MutableInteger;
-import urbachyannick.approxflow.javasignatures.PrimtiveType;
-import urbachyannick.approxflow.javasignatures.TypeSpecifier;
+import urbachyannick.approxflow.javasignatures.*;
 
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.stream.*;
 
 import static urbachyannick.approxflow.MiscUtil.or;
 import static urbachyannick.approxflow.codetransformation.BytecodeUtil.*;

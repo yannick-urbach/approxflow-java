@@ -1,13 +1,10 @@
 package urbachyannick.approxflow.codetransformation;
 
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
+import org.objectweb.asm.*;
 import org.objectweb.asm.tree.*;
-import urbachyannick.approxflow.javasignatures.MutableInteger;
-import urbachyannick.approxflow.javasignatures.TypeSpecifier;
+import urbachyannick.approxflow.javasignatures.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static urbachyannick.approxflow.codetransformation.BytecodeUtil.*;

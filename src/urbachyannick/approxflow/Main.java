@@ -4,20 +4,16 @@ import org.objectweb.asm.tree.ClassNode;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 import picocli.CommandLine;
-import urbachyannick.approxflow.cnf.*;
-import urbachyannick.approxflow.codetransformation.*;
+import urbachyannick.approxflow.cnf.Jbmc;
 import urbachyannick.approxflow.codetransformation.Compiler;
-import urbachyannick.approxflow.informationflow.DefaultAnalyzer;
-import urbachyannick.approxflow.informationflow.FlowAnalyzer;
+import urbachyannick.approxflow.codetransformation.*;
+import urbachyannick.approxflow.informationflow.*;
 import urbachyannick.approxflow.modelcounting.ScalMC;
 
 import javax.xml.parsers.*;
 import javax.xml.xpath.*;
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.stream.Collectors;
+import java.nio.file.*;
 import java.util.stream.Stream;
 
 import static picocli.CommandLine.*;

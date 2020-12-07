@@ -1,18 +1,11 @@
 package urbachyannick.approxflow.modelcounting;
 
 import urbachyannick.approxflow.IOCallbacks;
-import urbachyannick.approxflow.cnf.IO;
-import urbachyannick.approxflow.cnf.ScopedMappedProblem;
+import urbachyannick.approxflow.cnf.*;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Iterator;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.nio.file.*;
+import java.util.regex.*;
 
 public class ScalMC implements ModelCounter {
 
@@ -25,6 +18,7 @@ public class ScalMC implements ModelCounter {
             cnfFilePath = ioCallbacks.createTemporaryFile("scalmc-input.cnf");
             outputPath = ioCallbacks.createTemporaryFile("sclamc-log.txt");
             ioCallbacks.createTemporaryFile("scalmc-input.cnf.scope");
+
             IO.write(problem, cnfFilePath);
         } catch (IOException e) {
             throw new ModelCountingException("Can not write temporary CNF file", e);

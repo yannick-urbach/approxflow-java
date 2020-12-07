@@ -6,8 +6,7 @@ import org.objectweb.asm.tree.*;
 import java.util.*;
 
 import static urbachyannick.approxflow.MiscUtil.or;
-import static urbachyannick.approxflow.codetransformation.BytecodeUtil.getAnnotation;
-import static urbachyannick.approxflow.codetransformation.BytecodeUtil.getAnnotationValue;
+import static urbachyannick.approxflow.codetransformation.BytecodeUtil.*;
 
 public class UnrollLoops extends Transformation.PerClassNoExcept {
 

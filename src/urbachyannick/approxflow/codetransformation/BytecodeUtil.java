@@ -1,7 +1,6 @@
 package urbachyannick.approxflow.codetransformation;
 
-import org.objectweb.asm.Label;
-import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.*;
 import org.objectweb.asm.tree.*;
 
 import java.util.*;
@@ -85,12 +84,6 @@ public class BytecodeUtil {
 
     public static int invertJumpCondition(int opcode) {
         return jumpInversions.get(opcode);
-    }
-
-    public static boolean isProperInstruction(AbstractInsnNode instruction) {
-        int type = instruction.getType();
-
-        return type != AbstractInsnNode.LABEL && type != AbstractInsnNode.FRAME && type != AbstractInsnNode.LINE;
     }
 
     public static Optional<Object> readConstantInstruction(AbstractInsnNode instruction) {

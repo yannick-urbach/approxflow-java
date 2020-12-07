@@ -1,16 +1,11 @@
 package urbachyannick.approxflow.codetransformation;
 
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.*;
 import org.objectweb.asm.tree.ClassNode;
-import urbachyannick.approxflow.javasignatures.ClassName;
-import urbachyannick.approxflow.javasignatures.MutableInteger;
+import urbachyannick.approxflow.javasignatures.*;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.*;
+import java.nio.file.*;
 import java.util.Iterator;
 import java.util.stream.Stream;
 

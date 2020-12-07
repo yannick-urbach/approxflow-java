@@ -1,7 +1,5 @@
 package urbachyannick.approxflow.javasignatures;
 
-import java.text.ParseException;
-
 public class ParseUtil {
     public static long parseNumber(String input, MutableInteger inoutOffset) {
         int start = inoutOffset.get();
