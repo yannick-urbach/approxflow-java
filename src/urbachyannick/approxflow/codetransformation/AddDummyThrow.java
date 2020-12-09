@@ -12,7 +12,7 @@ import static urbachyannick.approxflow.codetransformation.BytecodeUtil.findMainM
  * For some reason this doesn't seem to work if externalized into a method.
  */
 public class AddDummyThrow implements Transformation {
-    private static InsnList dummyThrow() {
+    public static InsnList dummyThrow() {
         return new InsnList() {{
             add(new TypeInsnNode(Opcodes.NEW, "Ljava/lang/AssertionError;")); // allocate error
             add(new InsnNode(Opcodes.DUP)); // duplicate reference to feed one into constructor

@@ -22,7 +22,7 @@ public class ParameterOutputOverApproximated implements Scanner<IntStream> {
                                     parameter.method.name,
                                     parameter.parameterTypes,
                                     parameter.returnType,
-                                    new AnonymousParameter(0, parameter.parameterType)
+                                    new AnonymousParameter(parameter.parameterIndex, parameter.parameterType)
                             )
                     );
 

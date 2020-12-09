@@ -67,6 +67,9 @@ public class Main implements Runnable {
 
     @Option(names = {"--eclipse"}, description = "use eclipse java compiler instead of javac")
     private boolean eclipse;
+    
+    @Option(names = {"--blackbox-experimental"}, description = "use experimental treatment of blackbox methods (may break other functionality)")
+    private boolean blackboxExperimental;
 
     // endregion
 
@@ -80,24 +83,33 @@ public class Main implements Runnable {
     public void run() {
         Compiler compiler = eclipse ? new EclipseJavaCompiler() : new Javac();
 
-        FlowAnalyzer analyzer = new DefaultAnalyzer(
-                new Jbmc(partialLoops, unwind),
-                Stream.of(
-                        new MethodOfInterestTransform(),
-                        new ReturnValueInput(),
-                        new ParameterOutput(),
-                        new AssertToAssume(),
-                        new AddDummyThrow(),
-                        new UnrollLoops(),
-                        new InlineMethods()
-                ),
-                Stream.of(
-                        new OutputVariable(),
-                        new OutputArray(),
-                        new ParameterOutputOverApproximated()
-                ),
-                new ScalMC()
-        );
+        FlowAnalyzer analyzer;
+
+        if (blackboxExperimental) {
+            analyzer = new BlackboxSplitter(
+                    new Jbmc(partialLoops, unwind),
+                    new ScalMC()
+            );
+        } else {
+            analyzer = new DefaultAnalyzer(
+                    new Jbmc(partialLoops, unwind),
+                    Stream.of(
+                            new MethodOfInterestTransform(),
+                            new ReturnValueInput(),
+                            new ParameterOutput(),
+                            new AssertToAssume(),
+                            new AddDummyThrow(),
+                            new UnrollLoops(),
+                            new InlineMethods()
+                    ),
+                    Stream.of(
+                            new OutputVariable(),
+                            new OutputArray(),
+                            new ParameterOutputOverApproximated()
+                    ),
+                    new ScalMC()
+            );
+        }
 
         if (operationMode.test)
             runTests(compiler, analyzer);

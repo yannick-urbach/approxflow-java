@@ -34,6 +34,10 @@ public class DefaultAnalyzer implements FlowAnalyzer {
 
         MappedProblem problem = generateCnf(classList.stream(), ioCallbacks);
         Scope scope = getScope(classList.stream(), problem);
+
+        if (!scope.getVariables().findAny().isPresent())
+            return 0;
+
         ScopedMappedProblem scopedMappedProblem = new ScopedMappedProblem(problem, scope);
         double solutions = countSolutions(scopedMappedProblem, ioCallbacks);
 

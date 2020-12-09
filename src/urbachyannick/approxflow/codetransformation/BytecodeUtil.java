@@ -2,9 +2,10 @@ package urbachyannick.approxflow.codetransformation;
 
 import org.objectweb.asm.*;
 import org.objectweb.asm.tree.*;
+import urbachyannick.approxflow.javasignatures.*;
 
 import java.util.*;
-import java.util.stream.Stream;
+import java.util.stream.*;
 
 public class BytecodeUtil {
     private static final Map<Integer, Integer> jumpInversions = new HashMap<Integer, Integer>() {
@@ -42,23 +43,24 @@ public class BytecodeUtil {
         put(Opcodes.LCONST_1, 1L);
     }};
 
+    public static boolean isMainMethod(MethodNode methodNode) {
+        return (
+                methodNode.name.equals("main") &&
+                methodNode.desc.equals("([Ljava/lang/String;)V") &&
+                hasFlag(methodNode.access, Opcodes.ACC_STATIC)
+        );
+    }
+
     public static Optional<MethodNode> findMainMethod(ClassNode classNode) {
         return classNode.methods.stream()
-                .filter(m ->
-                        m.name.equals("main") &&
-                        m.desc.equals("([Ljava/lang/String;)V") &&
-                        hasFlag(m.access, Opcodes.ACC_STATIC)
-                ).findFirst();
+                .filter(BytecodeUtil::isMainMethod)
+                .findFirst();
     }
 
     public static Optional<ClassNode> findClassWithMainMethod(Stream<ClassNode> classes) {
-        return classes.filter(classNode -> classNode.methods.stream()
-                .anyMatch(m ->
-                        m.name.equals("main") &&
-                        m.desc.equals("([Ljava/lang/String;)V") &&
-                        hasFlag(m.access, Opcodes.ACC_STATIC)
-                )
-        ).findFirst();
+        return classes
+                .filter(classNode -> findMainMethod(classNode).isPresent())
+                .findFirst();
     }
 
     public static boolean hasFlag(int value, int flag) {
@@ -80,6 +82,16 @@ public class BytecodeUtil {
         return annotations.stream()
                 .filter(a -> a.desc.equals(name))
                 .findFirst();
+    }
+
+    public static Stream<TypeSpecifier> getArgumentTypes(MethodNode method) {
+        return Arrays
+                .stream(Type.getArgumentTypes(method.desc))
+                .map(t -> TypeSpecifier.parse(t.getDescriptor(), new MutableInteger(0)));
+    }
+
+    public static TypeSpecifier getReturnType(MethodNode method) {
+        return TypeSpecifier.parse(Type.getReturnType(method.desc).getDescriptor(), new MutableInteger(0));
     }
 
     public static int invertJumpCondition(int opcode) {
