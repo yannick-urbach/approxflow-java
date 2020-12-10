@@ -70,9 +70,7 @@ public class Program {
     public static int blackboxCallCounter = 0;
 
     public static int blackbox(int input) {
-        blackboxCallCounter--;
-
-        if (blackboxCallCounter < partIndex) {
+        if (blackboxCallCounter++ < partIndex) {
             return in();
         } else {
             out(input);

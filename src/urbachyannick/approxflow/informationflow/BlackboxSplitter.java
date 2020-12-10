@@ -18,14 +18,18 @@ public class BlackboxSplitter implements FlowAnalyzer {
     private final List<Transformation> preSplitTransformations;
 
     public BlackboxSplitter(CnfGenerator cnfGenerator, ModelCounter modelCounter) {
-        preSplitTransformations = new ArrayList<>();
+        preSplitTransformations = new ArrayList<Transformation>() {{
+            add(new MethodOfInterestTransform());
+            add(new AssertToAssume());
+            add(new AddDummyThrow());
+            add(new UnrollLoops());
+            add(new InlineMethods());
+        }};
 
         intermediateAnalyzer = new DefaultAnalyzer(
                 cnfGenerator,
                 Stream.of(
-                        new ReturnValueInput(),
-                        new AssertToAssume(),
-                        new AddDummyThrow()
+                        new ReturnValueInput()
                 ),
                 Stream.of(
                         new BlackboxIntermediateOutput()
@@ -37,9 +41,7 @@ public class BlackboxSplitter implements FlowAnalyzer {
                 cnfGenerator,
                 Stream.of(
                         new ReturnValueInput(),
-                        new ParameterOutput(),
-                        new AssertToAssume(),
-                        new AddDummyThrow()
+                        new ParameterOutput()
                 ),
                 Stream.of(
                         new OutputVariable(),
