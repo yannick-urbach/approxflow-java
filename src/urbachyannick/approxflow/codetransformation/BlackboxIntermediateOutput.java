@@ -24,7 +24,7 @@ public class BlackboxIntermediateOutput implements Scanner<IntStream> {
 
         return sourceClasses.flatMapToInt(sourceClass ->
                 sourceClass.methods.stream()
-                        .filter(m -> hasAnnotation(m.visibleAnnotations, "Lurbachyannick/approxflow/_BlackboxOutput;"))
+                        .filter(m -> hasAnnotation(m.visibleAnnotations, "Lurbachyannick/approxflow/$$BlackboxOutput;"))
                         .flatMap(m -> {
                             List<TypeSpecifier> methodParameterTypes = getArgumentTypes(m).collect(Collectors.toList());
 

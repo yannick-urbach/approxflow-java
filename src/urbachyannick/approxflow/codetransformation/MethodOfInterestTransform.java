@@ -75,7 +75,7 @@ public class MethodOfInterestTransform extends Transformation.PerClass {
         FieldNode field = new FieldNode(
                 Opcodes.ASM5,
                 Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC,
-                "___val",
+                "$$val",
                 returnType.asTypeSpecifierString(),
                 null,
                 null
@@ -90,7 +90,7 @@ public class MethodOfInterestTransform extends Transformation.PerClass {
                 new FieldInsnNode(
                         Opcodes.PUTSTATIC,
                         targetClass.name,
-                        "___val",
+                        "$$val",
                         returnType.asTypeSpecifierString()
                 )
         );

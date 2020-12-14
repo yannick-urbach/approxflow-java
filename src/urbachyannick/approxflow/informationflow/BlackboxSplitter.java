@@ -93,7 +93,7 @@ public class BlackboxSplitter implements FlowAnalyzer {
             MappedProblem problem = callCountCheckCnfGenerator.generate(new BlackboxTransform(Integer.MAX_VALUE).apply(classes), ioCallbacks);
 
             JavaSignature fieldSignature = new JavaSignature(
-                    new ClassName("BlackboxCounter"),
+                    new ClassName("$$BlackboxCounter"),
                     new FieldAccess("calls")
             );
 

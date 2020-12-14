@@ -53,7 +53,7 @@ public class BlackboxTransform implements Transformation {
 
     private ClassNode blackboxCounterClass() {
         ClassNode class_ = new ClassNode(Opcodes.ASM5);
-        class_.name = "BlackboxCounter";
+        class_.name = "$$BlackboxCounter";
         class_.version = 50;
         class_.superName = "java/lang/Object";
 
@@ -71,7 +71,7 @@ public class BlackboxTransform implements Transformation {
     }
 
     private void applyToBlackboxMethod(ClassNode class_, MethodNode method, List<ClassNode> sourceClasses) {
-        String parameterOutputMethodName = method.name + "_paramout";
+        String parameterOutputMethodName = "$$" + method.name + "$$paramout";
 
         List<TypeSpecifier> argumentTypes = Arrays
                 .stream(Type.getArgumentTypes(method.desc))
@@ -93,7 +93,7 @@ public class BlackboxTransform implements Transformation {
                 null
         ) {{
             visibleAnnotations = new ArrayList<AnnotationNode>() {{
-                add(new AnnotationNode(Opcodes.ASM5, "Lurbachyannick/approxflow/_BlackboxOutput;"));
+                add(new AnnotationNode(Opcodes.ASM5, "Lurbachyannick/approxflow/$$BlackboxOutput;"));
             }};
 
             instructions.add(new LabelNode());
@@ -131,11 +131,11 @@ public class BlackboxTransform implements Transformation {
             //     throw new AssertionError();
             // }
 
-            add(new FieldInsnNode(Opcodes.GETSTATIC, "BlackboxCounter", "calls", "I"));
+            add(new FieldInsnNode(Opcodes.GETSTATIC, "$$BlackboxCounter", "calls", "I"));
             add(new InsnNode(Opcodes.DUP));
             add(new InsnNode(Opcodes.ICONST_1));
             add(new InsnNode(Opcodes.IADD));
-            add(new FieldInsnNode(Opcodes.PUTSTATIC, "BlackboxCounter", "calls", "I"));
+            add(new FieldInsnNode(Opcodes.PUTSTATIC, "$$BlackboxCounter", "calls", "I"));
             add(new LdcInsnNode(callIndex));
             add(new JumpInsnNode(Opcodes.IF_ICMPGE, elseLabel));
 

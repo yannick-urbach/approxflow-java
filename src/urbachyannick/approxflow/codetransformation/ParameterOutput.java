@@ -61,10 +61,10 @@ public class ParameterOutput extends Transformation.PerClassNoExcept {
             return;
 
         String methodQualifiedName = parameter.method.name + "_" + parameter.parameter.name;
-        String arrayName = methodQualifiedName + "_array";
-        String counterName = methodQualifiedName + "_counter";
+        String arrayName = "$$" + methodQualifiedName + "$$array";
+        String counterName = "$$" + methodQualifiedName + "$$counter";
         String arrayType = "[" + parameter.parameterType.asTypeSpecifierString();
-        String overflowMethodName = methodQualifiedName + "_overflow";
+        String overflowMethodName = "$$" + methodQualifiedName + "$$overflow";
 
         FieldNode outputArray = new FieldNode(
                 Opcodes.ASM5,
