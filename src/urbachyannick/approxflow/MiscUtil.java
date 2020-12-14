@@ -30,6 +30,24 @@ public class MiscUtil {
         return result;
     }
 
+    public static long parseLongFromTrivialLiterals(Stream<TrivialMappingValue> literals) {
+        Iterator<TrivialMappingValue> iterator = literals.iterator();
+
+        long result = 0;
+
+
+        for (int bit = 0; iterator.hasNext(); ++bit) {
+            if (bit > 64)
+                throw new IllegalArgumentException("Must have at most 64 literals");
+
+            TrivialMappingValue literal = iterator.next();
+
+            result |= (long)(literal.get() ? 1 : 0) << bit;
+        }
+
+        return result;
+    }
+
     // available as member function in Java 9, but not in Java 8
     public static <T> Optional<T> or(Optional<T> o1, Optional<T> o2) {
         if (o1.isPresent())

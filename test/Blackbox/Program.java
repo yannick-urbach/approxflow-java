@@ -33,15 +33,19 @@ public class Program {
     ----- Current limitations -----
 
         -   The EXACT number of times a blackbox method will be called MUST be given via the annotation.
+            ->  solve by reading final value of BlackboxCounter.calls from cnf (still requires number to constant, but
+                don't have to indicate it manually anymore)
         -   The code executed after a blackbox method call MUST NOT depend on any marked private inputs nor the return
             value of other blackbox method calls except through this blackbox method call.
+            ->  possibly solve by separately checking leakage to regular outputs and to blackbox method params? Would
+                have to treat inputs differently too, analyze twice per part...
 
      */
 
 
-    @Blackbox(calls = 2)
+    @Blackbox
     public static int blackbox(int input) {
-        return input; // don't know what happens in here
+        return 5; // don't know what happens in here
     }
 
     @PrivateInput
@@ -58,7 +62,7 @@ public class Program {
 
         int intermediate1 = blackbox(input & 0b1111);
 
-        int intermediate2 = blackbox(intermediate1 & 0b11);
+        int intermediate2 = blackbox(intermediate1 & 0b110000);
 
         out(intermediate2);
     }
@@ -74,7 +78,7 @@ public class Program {
             return in();
         } else {
             out(input);
-            throw new AssertionError();
+            throw new AssertionError(); // this doesn't work as expected...
         }
     }
     */
