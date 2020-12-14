@@ -55,8 +55,8 @@ public class ClassName implements TypeSpecifier {
     }
 
     @Override
-    public PrimtiveType asPrimitive() {
-        return PrimtiveType.ADDRESS;
+    public PrimitiveType asPrimitive() {
+        return PrimitiveType.ADDRESS;
     }
 
     @Override

@@ -118,7 +118,7 @@ public class InlineMethods implements Transformation {
 
             // write this to first local variable
             if (opcode == Opcodes.INVOKEVIRTUAL)
-                visitVarInsn(PrimtiveType.ADDRESS.getStoreLocalOpcode(), variableMap.get(argLocalVariableIndex++));
+                visitVarInsn(PrimitiveType.ADDRESS.getStoreLocalOpcode(), variableMap.get(argLocalVariableIndex++));
 
             // write arguments to subsequent local variables
             for (TypeSpecifier argumentType : argumentTypes)

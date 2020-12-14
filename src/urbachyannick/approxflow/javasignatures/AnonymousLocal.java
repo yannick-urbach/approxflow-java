@@ -4,9 +4,9 @@ import java.util.Objects;
 
 public class AnonymousLocal extends FunctionCallVariable {
     int stackSlot;
-    PrimtiveType type;
+    PrimitiveType type;
 
-    public AnonymousLocal(int stackSlot, PrimtiveType type) {
+    public AnonymousLocal(int stackSlot, PrimitiveType type) {
         this.stackSlot = stackSlot;
         this.type = type;
     }
@@ -20,7 +20,7 @@ public class AnonymousLocal extends FunctionCallVariable {
         if (stackSlot == null)
             return null;
 
-        PrimtiveType type = PrimtiveType.tryParseFromVariableNamePostfix(input, inoutOffset);
+        PrimitiveType type = PrimitiveType.tryParseFromVariableNamePostfix(input, inoutOffset);
 
         if (type == null)
             return null;

@@ -5,7 +5,7 @@ import org.objectweb.asm.Opcodes;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public enum PrimtiveType implements TypeSpecifier {
+public enum PrimitiveType implements TypeSpecifier {
     VOID("Void", 'V', null, 0, false, Opcodes.RETURN, 0, 0, 0, 0),
     BOOLEAN("Boolean", 'Z', 'z', 1, true, Opcodes.IRETURN, Opcodes.ILOAD, Opcodes.ISTORE, Opcodes.BASTORE, Opcodes.T_BOOLEAN),
     BYTE("Byte", 'B', 'b', 1, true, Opcodes.IRETURN, Opcodes.ILOAD, Opcodes.ISTORE, Opcodes.BASTORE, Opcodes.T_BYTE),
@@ -27,8 +27,8 @@ public enum PrimtiveType implements TypeSpecifier {
     private final int arrayStoreOpcode;
     private final int typeOpcode;
     private final int storeLocalOpcode;
-    private static final Map<Character, PrimtiveType> baseTypeMap;
-    private static final Map<Character, PrimtiveType> variableNamePostfixMap;
+    private static final Map<Character, PrimitiveType> baseTypeMap;
+    private static final Map<Character, PrimitiveType> variableNamePostfixMap;
 
     static {
         baseTypeMap = Arrays
@@ -42,7 +42,7 @@ public enum PrimtiveType implements TypeSpecifier {
                 .collect(Collectors.toMap(t -> t.variableNamePostfix, t -> t));
     }
 
-    PrimtiveType(
+    PrimitiveType(
             String name,
             Character baseType,
             Character variableNamePostfix,
@@ -66,8 +66,8 @@ public enum PrimtiveType implements TypeSpecifier {
         this.typeOpcode = typeOpcode;
     }
 
-    public static PrimtiveType tryParseFromTypeSpecifier(String input, MutableInteger offset) {
-        PrimtiveType type = baseTypeMap.get(input.charAt(offset.get()));
+    public static PrimitiveType tryParseFromTypeSpecifier(String input, MutableInteger offset) {
+        PrimitiveType type = baseTypeMap.get(input.charAt(offset.get()));
 
         if (type == null)
             return null;
@@ -76,8 +76,8 @@ public enum PrimtiveType implements TypeSpecifier {
         return type;
     }
 
-    public static PrimtiveType tryParseFromVariableNamePostfix(String input, MutableInteger offset) {
-        PrimtiveType type = variableNamePostfixMap.get(input.charAt(offset.get()));
+    public static PrimitiveType tryParseFromVariableNamePostfix(String input, MutableInteger offset) {
+        PrimitiveType type = variableNamePostfixMap.get(input.charAt(offset.get()));
 
         if (type == null)
             return null;
@@ -92,7 +92,7 @@ public enum PrimtiveType implements TypeSpecifier {
     }
 
     @Override
-    public PrimtiveType asPrimitive() {
+    public PrimitiveType asPrimitive() {
         return this;
     }
 

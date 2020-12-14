@@ -2,11 +2,11 @@ package urbachyannick.approxflow.javasignatures;
 
 public interface TypeSpecifier {
     String asTypeSpecifierString();
-    PrimtiveType asPrimitive();
+    PrimitiveType asPrimitive();
     boolean isPrimitive();
 
     static TypeSpecifier parse(String input, MutableInteger inoutOffset) {
-        TypeSpecifier type = PrimtiveType.tryParseFromTypeSpecifier(input, inoutOffset);
+        TypeSpecifier type = PrimitiveType.tryParseFromTypeSpecifier(input, inoutOffset);
 
         if (type == null)
             type = ClassName.tryParseFromTypeSpecifier(input, inoutOffset);

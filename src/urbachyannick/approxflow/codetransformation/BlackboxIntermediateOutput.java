@@ -46,7 +46,7 @@ public class BlackboxIntermediateOutput implements Scanner<IntStream> {
                                     new FunctionCall(
                                             parameter.method.name,
                                             parameter.parameterTypes.toArray(new TypeSpecifier[0]),
-                                            PrimtiveType.VOID,
+                                            PrimitiveType.VOID,
                                             new NamedLocal(parameter.parameterName)
                                     )
                             );

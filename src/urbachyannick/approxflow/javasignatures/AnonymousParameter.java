@@ -4,9 +4,9 @@ import java.util.Objects;
 
 public class AnonymousParameter extends FunctionCallVariable {
     int stackSlot;
-    PrimtiveType type;
+    PrimitiveType type;
 
-    public AnonymousParameter(int stackSlot, PrimtiveType type) {
+    public AnonymousParameter(int stackSlot, PrimitiveType type) {
         this.stackSlot = stackSlot;
         this.type = type;
     }
@@ -20,7 +20,7 @@ public class AnonymousParameter extends FunctionCallVariable {
         if (stackSlot == null)
             return null;
 
-        PrimtiveType type = PrimtiveType.tryParseFromVariableNamePostfix(input, inoutOffset);
+        PrimitiveType type = PrimitiveType.tryParseFromVariableNamePostfix(input, inoutOffset);
 
         if (type == null)
             return null;

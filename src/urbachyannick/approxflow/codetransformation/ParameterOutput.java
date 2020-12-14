@@ -190,7 +190,7 @@ public class ParameterOutput extends Transformation.PerClassNoExcept {
         public ParameterNode parameter;
         public int parameterIndex;
         public int maxInstances;
-        public PrimtiveType parameterType;
+        public PrimitiveType parameterType;
         public boolean isInvalid; // can't throw in stream operations...
     }
 
