@@ -37,6 +37,11 @@
       <artifactId>asm-commons</artifactId>
       <version>9.0</version>
     </dependency>
+    <dependency>
+      <groupId>org.soot-oss</groupId>
+      <artifactId>soot</artifactId>
+      <version>4.2.1</version>
+    </dependency>
   </dependencies>
 
   <build>

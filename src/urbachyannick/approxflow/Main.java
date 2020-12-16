@@ -9,6 +9,7 @@ import urbachyannick.approxflow.codetransformation.Compiler;
 import urbachyannick.approxflow.codetransformation.*;
 import urbachyannick.approxflow.informationflow.*;
 import urbachyannick.approxflow.modelcounting.ScalMC;
+import urbachyannick.approxflow.soot.SootNop;
 
 import javax.xml.parsers.*;
 import javax.xml.xpath.*;
@@ -71,6 +72,9 @@ public class Main implements Runnable {
     @Option(names = {"--blackbox-experimental"}, description = "use experimental treatment of blackbox methods (may break other functionality)")
     private boolean blackboxExperimental;
 
+    @Option(names = {"--soot-experimental"}, description = "pass classes through soot before analysis; incompatible with --blackbox-experimental")
+    private boolean sootExperimental;
+
     // endregion
 
 
@@ -88,6 +92,26 @@ public class Main implements Runnable {
         if (blackboxExperimental) {
             analyzer = new BlackboxSplitter(
                     new Jbmc(partialLoops, unwind),
+                    new ScalMC()
+            );
+        } else if (sootExperimental) {
+            analyzer = new DefaultAnalyzer(
+                    new Jbmc(partialLoops, unwind),
+                    Stream.of(
+                            new SootNop(),
+                            new MethodOfInterestTransform(),
+                            new ReturnValueInput(),
+                            new ParameterOutput(),
+                            new AssertToAssume(),
+                            new AddDummyThrow(),
+                            new UnrollLoops(),
+                            new InlineMethods()
+                    ),
+                    Stream.of(
+                            new OutputVariable(),
+                            new OutputArray(),
+                            new ParameterOutputOverApproximated()
+                    ),
                     new ScalMC()
             );
         } else {
