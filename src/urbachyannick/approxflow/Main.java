@@ -65,6 +65,9 @@ public class Main implements Runnable {
     @Option(names = {"--unwind"}, description = "passed to jbmc", paramLabel = "nr", defaultValue = "0")
     private int unwind;
 
+    @Option(names = {"--eclipse"}, description = "use eclipse java compiler instead of javac")
+    private boolean eclipse;
+
     // endregion
 
 
@@ -75,7 +78,7 @@ public class Main implements Runnable {
      */
     @Override
     public void run() {
-        Compiler compiler = new Javac();
+        Compiler compiler = eclipse ? new EclipseJavaCompiler() : new Javac();
 
         FlowAnalyzer analyzer = new DefaultAnalyzer(
                 new Jbmc(partialLoops, unwind),
