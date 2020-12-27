@@ -1,6 +1,5 @@
 package urbachyannick.approxflow.codetransformation;
 
-import org.objectweb.asm.Type;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
 import urbachyannick.approxflow.javasignatures.*;
@@ -18,7 +17,7 @@ public class BlackboxTransform implements Transformation {
     }
 
     @Override
-    public Stream<ClassNode> apply(Stream<ClassNode> classes) {
+    public Stream<ClassNode> apply(Stream<ClassNode> classes) throws InvalidTransformationException {
         List<ClassNode> classList = classes.collect(Collectors.toList());
         Stream.Builder<ClassNode> streamBuilder = Stream.builder();
 
@@ -31,7 +30,7 @@ public class BlackboxTransform implements Transformation {
         return streamBuilder.build();
     }
 
-    private ClassNode applyToClass(ClassNode sourceClass, List<ClassNode> sourceClasses) {
+    private ClassNode applyToClass(ClassNode sourceClass, List<ClassNode> sourceClasses) throws InvalidTransformationException {
         ClassNode targetClass = new ClassNode(Opcodes.ASM5);
         sourceClass.accept(targetClass);
 
@@ -119,14 +118,7 @@ public class BlackboxTransform implements Transformation {
             add(new JumpInsnNode(Opcodes.IF_ICMPGE, elseLabel));
 
             // then
-            add(
-                    new MethodInsnNode(
-                            Opcodes.INVOKESTATIC,
-                            "org/cprover/CProver",
-                            "nondet" + returnType.asPrimitive().getName(),
-                            "()" + returnType.asTypeSpecifierString()
-                    )
-            );
+            add(Nondet.generateNondetRecursive(returnType, sourceClasses.stream()));
             add(new InsnNode(returnType.asPrimitive().getReturnOpcode()));
 
             // else

@@ -4,22 +4,23 @@ import org.objectweb.asm.*;
 import org.objectweb.asm.tree.*;
 import urbachyannick.approxflow.javasignatures.*;
 
-import java.util.Iterator;
-import java.util.stream.Stream;
+import java.util.*;
+import java.util.stream.*;
 
 public class ReturnValueInput implements Transformation {
     @Override
     public Stream<ClassNode> apply(Stream<ClassNode> sourceClasses) throws InvalidTransformationException {
         Stream.Builder<ClassNode> streamBuilder = Stream.builder();
-        Iterator<ClassNode> i = sourceClasses.iterator();
 
-        while (i.hasNext())
-            streamBuilder.accept(applyToClass(i.next()));
+        List<ClassNode> sourceClassList = sourceClasses.collect(Collectors.toList());
+
+        for (ClassNode sourceClass : sourceClassList)
+            streamBuilder.accept(applyToClass(sourceClass, sourceClassList));
 
         return streamBuilder.build();
     }
 
-    private ClassNode applyToClass(ClassNode sourceClass) throws InvalidTransformationException {
+    private ClassNode applyToClass(ClassNode sourceClass, List<ClassNode> classes) throws InvalidTransformationException {
         ClassNode targetClass = new ClassNode(Opcodes.ASM5);
 
         sourceClass.accept(targetClass);
@@ -37,22 +38,10 @@ public class ReturnValueInput implements Transformation {
                 continue;
 
             TypeSpecifier returnType = TypeSpecifier.parse(Type.getReturnType(sourceMethod.desc).getDescriptor(), new MutableInteger(0));
-
-            if (!returnType.isPrimitive())
-                throw new InvalidTransformationException("Private inputs must be of primitive types (for now).");
-
             MethodNode targetMethod = targetClass.methods.get(i);
 
             targetMethod.instructions.clear();
-            targetMethod.instructions.add(
-                    new MethodInsnNode(
-                            Opcodes.INVOKESTATIC,
-                            "org/cprover/CProver",
-                            "nondet" + returnType.asPrimitive().getName(),
-                            "()" + returnType.asTypeSpecifierString()
-                    )
-            );
-
+            targetMethod.instructions.add(Nondet.generateNondetRecursive(returnType, classes.stream()));
             targetMethod.instructions.add(new InsnNode(returnType.asPrimitive().getReturnOpcode()));
         }
 
