@@ -70,15 +70,11 @@ public class BlackboxTransform implements Transformation {
         return class_;
     }
 
-    private void applyToBlackboxMethod(ClassNode class_, MethodNode method, List<ClassNode> sourceClasses) {
+    private void applyToBlackboxMethod(ClassNode class_, MethodNode method, List<ClassNode> sourceClasses) throws InvalidTransformationException {
         String parameterOutputMethodName = "$$" + method.name + "$$paramout";
 
-        List<TypeSpecifier> argumentTypes = Arrays
-                .stream(Type.getArgumentTypes(method.desc))
-                .map(t -> TypeSpecifier.parse(t.getDescriptor(), new MutableInteger(0)))
-                .collect(Collectors.toList());
-
-        TypeSpecifier returnType = TypeSpecifier.parse(Type.getReturnType(method.desc).getDescriptor(), new MutableInteger(0));
+        List<TypeSpecifier> argumentTypes = getArgumentTypes(method).collect(Collectors.toList());
+        TypeSpecifier returnType = getReturnType(method);
 
         MethodNode parameterOutputMethod = new MethodNode(
                 Opcodes.ASM5,
@@ -101,23 +97,6 @@ public class BlackboxTransform implements Transformation {
             instructions.add(new LabelNode());
 
             maxLocals = argumentTypes.size();
-
-            localVariables = IntStream
-                    .range(0, argumentTypes.size())
-                    .mapToObj(i ->
-                            new LocalVariableNode(
-                                    method.parameters.get(i).name,
-                                    argumentTypes.get(i).asTypeSpecifierString(),
-                                    null,
-                                    (LabelNode) instructions.getFirst(),
-                                    (LabelNode) instructions.getFirst(),
-                                    0
-                            ))
-                    .collect(Collectors.toList());
-
-            parameters = method.parameters.stream()
-                    .map(p -> new ParameterNode(p.name, p.access))
-                    .collect(Collectors.toList());
         }};
         class_.methods.add(parameterOutputMethod);
 

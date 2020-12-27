@@ -60,7 +60,7 @@ public class ParameterOutput extends Transformation.PerClassNoExcept {
         if (parameter.maxInstances <= 0)
             return;
 
-        String methodQualifiedName = parameter.method.name + "_" + parameter.parameter.name;
+        String methodQualifiedName = parameter.method.name + "$$" + parameter.parameterIndex;
         String arrayName = "$$" + methodQualifiedName + "$$array";
         String counterName = "$$" + methodQualifiedName + "$$counter";
         String arrayType = "[" + parameter.parameterType.asTypeSpecifierString();
@@ -112,20 +112,6 @@ public class ParameterOutput extends Transformation.PerClassNoExcept {
             instructions.add(new LabelNode());
 
             maxLocals = 1;
-            localVariables = new ArrayList<LocalVariableNode>() {{
-                add(new LocalVariableNode(
-                        parameter.parameter.name,
-                        parameter.parameterType.asTypeSpecifierString(),
-                        null,
-                        (LabelNode) instructions.getFirst(),
-                        (LabelNode) instructions.getFirst(),
-                        0
-                ));
-            }};
-
-            parameters = new ArrayList<ParameterNode>() {{
-                add(new ParameterNode(parameter.parameter.name, 0));
-            }};
         }};
 
         class_.methods.add(overflowMethod);
@@ -187,7 +173,6 @@ public class ParameterOutput extends Transformation.PerClassNoExcept {
         public MethodNode method;
         public TypeSpecifier[] parameterTypes;
         public TypeSpecifier returnType;
-        public ParameterNode parameter;
         public int parameterIndex;
         public int maxInstances;
         public PrimitiveType parameterType;
@@ -198,31 +183,25 @@ public class ParameterOutput extends Transformation.PerClassNoExcept {
         return class_.methods.stream()
                 .filter(method ->
                         method.visibleParameterAnnotations != null &&
-                        method.parameters != null
+                        !method.desc.startsWith("()") // has parameters
                 )
                 .flatMap(method -> {
-                    Type[] parameterTypes = Type.getArgumentTypes(method.desc);
+                    List<TypeSpecifier> parameterTypeSpecifiers = getArgumentTypes(method).collect(Collectors.toList());
+                    TypeSpecifier returnType = getReturnType(method);
 
-                    TypeSpecifier[] parameterTypeSpecifiers = Arrays.stream(parameterTypes)
-                            .map(t -> TypeSpecifier.parse(t.getDescriptor(), new MutableInteger(0)))
-                            .toArray(TypeSpecifier[]::new);
-
-                    TypeSpecifier returnType = TypeSpecifier.parse(Type.getReturnType(method.desc).getDescriptor(), new MutableInteger(0));
-
-                    return IntStream.range(0, method.parameters.size())
+                    return IntStream.range(0, parameterTypeSpecifiers.size())
                             .filter(i -> hasAnnotation(method.visibleParameterAnnotations[i], "Lurbachyannick/approxflow/PublicOutput;"))
                             .mapToObj(i -> {
                                 AnnotationNode annotationNode = getAnnotation(method.visibleParameterAnnotations[i], "Lurbachyannick/approxflow/PublicOutput;").get();
 
                                 OutputParameter result = new OutputParameter();
                                 result.method = method;
-                                result.parameterTypes = parameterTypeSpecifiers;
+                                result.parameterTypes = parameterTypeSpecifiers.toArray(new TypeSpecifier[0]);
                                 result.returnType = returnType;
-                                result.parameter = method.parameters.get(i);
                                 result.parameterIndex = i;
                                 result.maxInstances = (int) (Integer) getAnnotationValue(annotationNode, "maxInstances").orElse(16);
 
-                                TypeSpecifier parameterType = parameterTypeSpecifiers[i];
+                                TypeSpecifier parameterType = parameterTypeSpecifiers.get(i);
 
                                 if (!parameterType.isPrimitive()) {
                                     result.isInvalid = true;

@@ -27,7 +27,6 @@ public class Javac implements Compiler {
             command.add("-classpath");
             command.add(resPath.resolve("jbmc-core-models.jar").toString() + ":" + resPath.toString());
             command.add("-g");
-            command.add("-parameters");
             command.add("-d");
             command.add(targetDir.toString());
 

@@ -16,7 +16,6 @@ public class BlackboxIntermediateOutput implements Scanner<IntStream> {
         public int parameterIndex;
         public TypeSpecifier parameterType;
         public List<TypeSpecifier> parameterTypes;
-        public String parameterName;
     }
 
     @Override
@@ -36,7 +35,6 @@ public class BlackboxIntermediateOutput implements Scanner<IntStream> {
                                                 parameterIndex = i;
                                                 parameterType = methodParameterTypes.get(i);
                                                 parameterTypes = methodParameterTypes;
-                                                parameterName = m.parameters.get(i).name;
                                             }}
                                     );
                         })
@@ -47,7 +45,7 @@ public class BlackboxIntermediateOutput implements Scanner<IntStream> {
                                             parameter.method.name,
                                             parameter.parameterTypes.toArray(new TypeSpecifier[0]),
                                             PrimitiveType.VOID,
-                                            new NamedLocal(parameter.parameterName)
+                                            new AnonymousParameter(parameter.parameterIndex, parameter.parameterType.asPrimitive())
                                     )
                             );
 
