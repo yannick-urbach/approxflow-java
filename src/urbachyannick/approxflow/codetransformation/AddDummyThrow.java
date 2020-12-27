@@ -14,11 +14,11 @@ import static urbachyannick.approxflow.codetransformation.BytecodeUtil.findMainM
 public class AddDummyThrow implements Transformation {
     public static InsnList dummyThrow() {
         return new InsnList() {{
-            add(new TypeInsnNode(Opcodes.NEW, "Ljava/lang/AssertionError;")); // allocate error
+            add(new TypeInsnNode(Opcodes.NEW, "java/lang/AssertionError")); // allocate error
             add(new InsnNode(Opcodes.DUP)); // duplicate reference to feed one into constructor
             add(new MethodInsnNode( // call constructor
                     Opcodes.INVOKESPECIAL,
-                    "Ljava/lang/AssertionError;",
+                    "java/lang/AssertionError",
                     "<init>",
                     "()V"
             ));
