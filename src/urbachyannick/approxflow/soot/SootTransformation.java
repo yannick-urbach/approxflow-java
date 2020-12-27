@@ -7,7 +7,7 @@ import urbachyannick.approxflow.codetransformation.*;
 import java.util.stream.Stream;
 
 public abstract class SootTransformation implements Transformation {
-    protected abstract Stream<SootClass> applySoot(Stream<SootClass> classes);
+    protected abstract Stream<SootClass> applySoot(Stream<SootClass> classes) throws InvalidTransformationException;
 
     @Override
     public Stream<ClassNode> apply(Stream<ClassNode> asmInputClasses) throws InvalidTransformationException {

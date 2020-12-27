@@ -9,7 +9,6 @@ import urbachyannick.approxflow.codetransformation.Compiler;
 import urbachyannick.approxflow.codetransformation.*;
 import urbachyannick.approxflow.informationflow.*;
 import urbachyannick.approxflow.modelcounting.ScalMC;
-import urbachyannick.approxflow.soot.SootNop;
 
 import javax.xml.parsers.*;
 import javax.xml.xpath.*;
@@ -44,13 +43,6 @@ public class Main implements Runnable {
         private boolean test;
     }
 
-    /*
-    @Parameters(index = "0", paramLabel = "class", description = "main class with a static ___val variable for output (must be in the default package)")
-    private String className;
-
-    @Parameters(index = "1", paramLabel = "classpath", description = "classpath containing the main class")
-    private Path classpath;
-    */
     @Option(names = {"--write-cnf"}, description = "write the cnf file to disk")
     private boolean writeCnf;
 
@@ -68,12 +60,6 @@ public class Main implements Runnable {
 
     @Option(names = {"--eclipse"}, description = "use eclipse java compiler instead of javac")
     private boolean eclipse;
-    
-    @Option(names = {"--blackbox-experimental"}, description = "use experimental treatment of blackbox methods (may break other functionality)")
-    private boolean blackboxExperimental;
-
-    @Option(names = {"--soot-experimental"}, description = "pass classes through soot before analysis; incompatible with --blackbox-experimental")
-    private boolean sootExperimental;
 
     // endregion
 
@@ -87,53 +73,10 @@ public class Main implements Runnable {
     public void run() {
         Compiler compiler = eclipse ? new EclipseJavaCompiler() : new Javac();
 
-        FlowAnalyzer analyzer;
-
-        if (blackboxExperimental) {
-            analyzer = new BlackboxSplitter(
-                    new Jbmc(partialLoops, unwind),
-                    new ScalMC()
-            );
-        } else if (sootExperimental) {
-            analyzer = new DefaultAnalyzer(
-                    new Jbmc(partialLoops, unwind),
-                    Stream.of(
-                            new SootNop(),
-                            new MethodOfInterestTransform(),
-                            new ReturnValueInput(),
-                            new ParameterOutput(),
-                            new AssertToAssume(),
-                            new AddDummyThrow(),
-                            new UnrollLoops(),
-                            new InlineMethods()
-                    ),
-                    Stream.of(
-                            new OutputVariable(),
-                            new OutputArray(),
-                            new ParameterOutputOverApproximated()
-                    ),
-                    new ScalMC()
-            );
-        } else {
-            analyzer = new DefaultAnalyzer(
-                    new Jbmc(partialLoops, unwind),
-                    Stream.of(
-                            new MethodOfInterestTransform(),
-                            new ReturnValueInput(),
-                            new ParameterOutput(),
-                            new AssertToAssume(),
-                            new AddDummyThrow(),
-                            new UnrollLoops(),
-                            new InlineMethods()
-                    ),
-                    Stream.of(
-                            new OutputVariable(),
-                            new OutputArray(),
-                            new ParameterOutputOverApproximated()
-                    ),
-                    new ScalMC()
-            );
-        }
+        FlowAnalyzer analyzer = new BlackboxSplitter(
+                new Jbmc(partialLoops, unwind),
+                new ScalMC()
+        );
 
         if (operationMode.test)
             runTests(compiler, analyzer);

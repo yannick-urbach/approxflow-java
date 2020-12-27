@@ -7,6 +7,7 @@ import urbachyannick.approxflow.cnf.*;
 import urbachyannick.approxflow.codetransformation.*;
 import urbachyannick.approxflow.javasignatures.*;
 import urbachyannick.approxflow.modelcounting.ModelCounter;
+import urbachyannick.approxflow.soot.LoopReplacer;
 
 import java.util.*;
 import java.util.stream.*;
@@ -23,11 +24,12 @@ public class BlackboxSplitter implements FlowAnalyzer {
 
     public BlackboxSplitter(CnfGenerator cnfGenerator, ModelCounter modelCounter) {
         preSplitTransformations = new ArrayList<Transformation>() {{
+            add(new UnrollLoops());
+            add(new InlineMethods());
+            add(new LoopReplacer());
             add(new MethodOfInterestTransform());
             add(new AssertToAssume());
             add(new AddDummyThrow());
-            add(new UnrollLoops());
-            add(new InlineMethods());
         }};
 
         intermediateAnalyzer = new DefaultAnalyzer(
@@ -56,10 +58,14 @@ public class BlackboxSplitter implements FlowAnalyzer {
 
     @Override
     public double analyzeInformationFlow(Stream<ClassNode> classes, IOCallbacks ioCallbacks) {
-        return analyzeInformationFlowNoTransformations(transformClasses(classes, preSplitTransformations), ioCallbacks);
+        try {
+            return analyzeInformationFlowNoTransformations(transformClasses(classes, preSplitTransformations), ioCallbacks);
+        } catch (InvalidTransformationException e) {
+            throw new Fail("Error during transformation", e);
+        }
     }
 
-    private double analyzeInformationFlowNoTransformations(Stream<ClassNode> classes, IOCallbacks ioCallbacks) {
+    private double analyzeInformationFlowNoTransformations(Stream<ClassNode> classes, IOCallbacks ioCallbacks) throws InvalidTransformationException {
         List<ClassNode> classList = classes.collect(Collectors.toList());
 
         int partCount = getBlackboxCallCount(classList.stream(), ioCallbacks) + 1;
@@ -77,18 +83,14 @@ public class BlackboxSplitter implements FlowAnalyzer {
         return flow;
     }
 
-    private Stream<ClassNode> transformClasses(Stream<ClassNode> classes, List<Transformation> transformations) {
-        try {
-            for (Transformation t : transformations)
-                classes = t.apply(classes);
-        } catch (InvalidTransformationException e) {
-            throw new Fail("Error during transformation", e);
-        }
+    private Stream<ClassNode> transformClasses(Stream<ClassNode> classes, List<Transformation> transformations) throws InvalidTransformationException {
+        for (Transformation t : transformations)
+            classes = t.apply(classes);
 
         return classes;
     }
 
-    private int getBlackboxCallCount(Stream<ClassNode> classes, IOCallbacks ioCallbacks) {
+    private int getBlackboxCallCount(Stream<ClassNode> classes, IOCallbacks ioCallbacks) throws InvalidTransformationException {
         try {
             MappedProblem problem = callCountCheckCnfGenerator.generate(new BlackboxTransform(Integer.MAX_VALUE).apply(classes), ioCallbacks);
 

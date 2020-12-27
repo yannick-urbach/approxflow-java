@@ -1,20 +1,29 @@
+import urbachyannick.approxflow.*;
+
 public class Program {
+
+    @PublicOutput
+    public static int out;
+
+    @PrivateInput
+    public static int in() {
+        return 5;
+    }
+
     public static void main(String[] args) {
-        for (int i = 0; i < 20; ++i) {
-            for (int j = 0; j < 5; ++j) {
-                for (int k = 0; k < 5; ++k) {
-                    System.out.println();
-                }
+        int i = in();
+        int j = 0;
 
-                for (int k = 0; k < 5; ++k) {
-                    System.out.println();
-                }
-            }
+        for (int k = 0; k < i; ++k)
+            ++j;
 
-            do {
-                System.out.println();
-                ++i;
-            } while(i % 5 != 0);
-        }
+        j = j & 0b101;
+
+        int l = 0;
+
+        for (int m = 0; m < j; ++m)
+            ++l;
+
+        out = l;
     }
 }
