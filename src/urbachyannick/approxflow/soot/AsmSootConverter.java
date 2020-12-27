@@ -16,7 +16,22 @@ public class AsmSootConverter {
         soot.G g = soot.G.v();
 
         soot.options.Options options = soot.options.Options.v();
-        options.parse(new String[]{ "-keep-line-number", "-p", "jb", "use-original-names:true" });
+        boolean b = options.parse(new String[]{
+                "-keep-line-number",
+                "-p", "jb", "use-original-names:true",
+                "-p", "jb.ulp", "enabled:false",
+                "-p", "jb.ule", "enabled:false",
+                "-p", "jb.cp-ule", "enabled:false",
+                "-p", "jb.lp", "enabled:false",
+                "-p", "jj.ule", "enabled:false",
+                "-p", "jj.ulp", "enabled:false",
+                "-p", "jj.cp-ule", "enabled:false",
+                "-p", "jj.lp", "enabled:false",
+                "-p", "jop.ule", "enabled:false",
+                "-p", "gb.ule", "enabled:false",
+                "-p", "bb.ule", "enabled:false",
+                "-p", "bb.lp", "enabled:false",
+        });
 
         Scene scene = soot.Scene.v();
         scene.setSootClassPath(scene.defaultClassPath());
