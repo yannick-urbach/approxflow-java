@@ -48,57 +48,12 @@ public class LoopReplacer extends SootTransformation {
         }
     }
 
-    private static class UsesAnalysis {
-        public List<Value> accessed;
-        public List<Value> modified;
-
-        public UsesAnalysis(Stream<Block> blocks, LocalUses localUses, Stream<Value> variables) {
-            List<UnitValueBoxPair> variableUses = getVariableUsesInBlocks(blocks, localUses, variables)
-                    .collect(Collectors.toList());
-
-            modified = variableUses.stream()
-                    .filter(UsesAnalysis::isModification)
-                    .map(u -> u.valueBox.getValue())
-                    .distinct()
-                    .collect(Collectors.toList());
-
-            accessed = variableUses.stream()
-                    .filter(UsesAnalysis::isAccess)
-                    .map(u -> u.valueBox.getValue())
-                    .distinct()
-                    .collect(Collectors.toList());
-        }
-
-        private static Stream<UnitValueBoxPair> getVariableUsesInBlocks(Stream<Block> blocks, LocalUses localUses, Stream<Value> variables) {
-            Set<Value> variablesSet = variables.collect(Collectors.toSet());
-
-            List<Block> blockList = blocks.collect(Collectors.toList());
-
-            return blockList.stream()
-                    .flatMap(block -> getUnits(block).flatMap(u -> localUses.getUsesOf(u).stream()))
-                    .filter(uvbp -> uvbp.valueBox instanceof ImmediateBox)
-                    .filter(uvbp -> variablesSet.contains(uvbp.valueBox.getValue()));
-        }
-
-        private static boolean isAccess(UnitValueBoxPair use) {
-            return !isModification(use);
-        }
-
-        private static boolean isModification(UnitValueBoxPair use) {
-            return (
-                    use.unit instanceof JAssignStmt &&
-                    ((JAssignStmt) use.unit).leftBox.getValue().equals(use.valueBox.getValue())
-            );
-        }
-    }
-
     private void apply(SootMethod method, Loop loop, List<SootClass> classes) throws InvalidTransformationException {
         Body body = method.retrieveActiveBody();
         BlockGraph graph = new BriefBlockGraph(body);
         LocalUses localUses = LocalUses.Factory.newLocalUses(body);
 
         // find variables used in loop
-        List<Value> variables = body.getLocals().stream().map(l -> (Value) l).collect(Collectors.toList());
         List<Block> loopBodyBlocks = loop.getLoopBodyBlocks().collect(Collectors.toList());
 
         List<Block> otherBlocks = graph.getBlocks().stream()
