@@ -30,6 +30,9 @@ public class LoopReplacer extends SootTransformation {
     }
 
     private void apply(SootClass class_, List<SootClass> classes) throws InvalidTransformationException {
+        if (class_.isInterface())
+            return;
+
         List<SootMethod> methods = new ArrayList<>(class_.getMethods());
 
         for (SootMethod m : methods)
@@ -37,6 +40,9 @@ public class LoopReplacer extends SootTransformation {
     }
 
     private void apply(SootMethod method, List<SootClass> classes) throws InvalidTransformationException {
+        if (!method.isConcrete())
+            return;
+
         Body body = method.retrieveActiveBody();
         BlockGraph graph = new BriefBlockGraph(body);
 

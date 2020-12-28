@@ -51,6 +51,9 @@ public class AsmSootConverter {
 
     public static ClassNode toAsm(SootClass sootClass) {
         for (SootMethod m : sootClass.getMethods()) {
+            if (!m.isConcrete())
+                continue;
+
             m.retrieveActiveBody();
         }
 
