@@ -4,18 +4,15 @@ import urbachyannick.approxflow.javasignatures.Signature;
 
 import java.util.stream.*;
 
-public class ScopedMappedProblem {
+public class MaxModelCountingProblem {
     private final MappedProblem problem;
-    private final Scope scope;
+    private final Scope countVars;
+    private final Scope maxVars;
 
-    public ScopedMappedProblem(MappedProblem problem, Scope scope) {
+    public MaxModelCountingProblem(MappedProblem problem, Scope countVars, Scope maxVars) {
         this.problem = problem;
-        this.scope = scope;
-    }
-
-    public ScopedMappedProblem(Problem problem, VariableTable table, Scope scope) {
-        this.problem = new MappedProblem(problem, table);
-        this.scope = scope;
+        this.countVars = countVars;
+        this.maxVars = maxVars;
     }
 
     public MappedProblem getMappedProblem() {
@@ -26,8 +23,12 @@ public class ScopedMappedProblem {
         return problem.getProblem();
     }
 
-    public Scope getScope() {
-        return scope;
+    public Scope getCountVars() {
+        return countVars;
+    }
+
+    public Scope getMaxVars() {
+        return maxVars;
     }
 
     public VariableTable getVariableTable() {

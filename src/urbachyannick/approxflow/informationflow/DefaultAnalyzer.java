@@ -13,18 +13,21 @@ import java.util.stream.*;
 public class DefaultAnalyzer implements FlowAnalyzer {
     private final CnfGenerator cnfGenerator;
     private final List<Transformation> transformations;
-    private final List<Scanner<IntStream>> scanners;
-    private final ModelCounter modelCounter;
+    private final List<Scanner<IntStream>> countVarScanners;
+    private final List<Scanner<IntStream>> maxVarScanners;
+    private final MaxModelCounter modelCounter;
 
     public DefaultAnalyzer(
             CnfGenerator cnfGenerator,
             Stream<Transformation> transformations,
-            Stream<Scanner<IntStream>> scanners,
-            ModelCounter modelCounter
+            Stream<Scanner<IntStream>> countVarScanners,
+            Stream<Scanner<IntStream>> maxVarScanners,
+            MaxModelCounter modelCounter
     ) {
         this.cnfGenerator = cnfGenerator;
         this.transformations = transformations.collect(Collectors.toList());
-        this.scanners = scanners.collect(Collectors.toList());
+        this.countVarScanners = countVarScanners.collect(Collectors.toList());
+        this.maxVarScanners = maxVarScanners.collect(Collectors.toList());
         this.modelCounter = modelCounter;
     }
 
@@ -33,13 +36,14 @@ public class DefaultAnalyzer implements FlowAnalyzer {
         List<ClassNode> classList = transformClasses(classes).collect(Collectors.toList());
 
         MappedProblem problem = generateCnf(classList.stream(), ioCallbacks);
-        Scope scope = getScope(classList.stream(), problem);
+        Scope countVars = getScope(countVarScanners.stream(), classList.stream(), problem);
+        Scope maxVars = getScope(maxVarScanners.stream(), classList.stream(), problem);
 
-        if (!scope.getVariables().findAny().isPresent())
+        if (!countVars.getVariables().findAny().isPresent())
             return 0;
 
-        ScopedMappedProblem scopedMappedProblem = new ScopedMappedProblem(problem, scope);
-        double solutions = countSolutions(scopedMappedProblem, ioCallbacks);
+        MaxModelCountingProblem countingProblem = new MaxModelCountingProblem(problem, countVars, maxVars);
+        double solutions = countSolutions(countingProblem, ioCallbacks);
 
         return Math.log(solutions) / Math.log(2);
     }
@@ -63,11 +67,11 @@ public class DefaultAnalyzer implements FlowAnalyzer {
         }
     }
 
-    private Scope getScope(Stream<ClassNode> classes, MappedProblem problem) {
+    private Scope getScope(Stream<Scanner<IntStream>> scanners, Stream<ClassNode> classes, MappedProblem problem) {
         List<ClassNode> classList = classes.collect(Collectors.toList());
 
         return new Scope(
-                scanners.stream()
+                scanners
                         .flatMap(s -> s.scan(classList.stream(), problem).boxed())
                         .collect(Collectors.toList())
                         .stream()
@@ -75,7 +79,7 @@ public class DefaultAnalyzer implements FlowAnalyzer {
         );
     }
 
-    private double countSolutions(ScopedMappedProblem problem, IOCallbacks ioCallbacks) {
+    private double countSolutions(MaxModelCountingProblem problem, IOCallbacks ioCallbacks) {
         try {
             return modelCounter.count(problem, ioCallbacks);
         } catch (ModelCountingException e) {

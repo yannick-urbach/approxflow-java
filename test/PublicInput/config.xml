@@ -1,0 +1,5 @@
+<test>
+    <skip>false</skip>
+    <minflow>1</minflow>
+    <maxflow>1</maxflow>
+</test>

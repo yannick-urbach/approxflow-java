@@ -32,7 +32,10 @@ public class ReturnValueInput implements Transformation {
                 continue;
 
             boolean hasPrivateInputAnnotation = sourceMethod.visibleAnnotations.stream()
-                    .anyMatch(a -> a.desc.equals("Lurbachyannick/approxflow/PrivateInput;"));
+                    .anyMatch(a ->
+                            a.desc.equals("Lurbachyannick/approxflow/PrivateInput;") ||
+                            a.desc.equals("Lurbachyannick/approxflow/PublicInput;")
+                    );
 
             if (!hasPrivateInputAnnotation)
                 continue;

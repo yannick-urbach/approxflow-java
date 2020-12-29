@@ -1,0 +1,3 @@
+[submodule "util/maxcount"]
+	path = util/maxcount
+	url = https://github.com/dfremont/maxcount.git

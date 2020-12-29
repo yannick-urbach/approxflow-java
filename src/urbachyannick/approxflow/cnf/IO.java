@@ -69,21 +69,32 @@ public class IO {
         return new MappedProblem(p, v);
     }
 
-    public static Scope readScopeFromCIndLines(Path path) throws IOException {
+    public static Scope readScopeLines(Path path, String prefix) throws IOException {
         Pattern space = Pattern.compile(" ");
 
         IntStream variables = Files
                 .lines(path)
-                .filter(l -> l.startsWith("c ind "))
+                .filter(l -> l.startsWith(prefix))
                 .flatMapToInt(l -> space.splitAsStream(l.subSequence(6, l.length() - 2)).mapToInt(Integer::parseInt));
 
         return new Scope(variables);
     }
 
-    public static ScopedMappedProblem readScopedMappedProblem(Path path) throws IOException {
+    public static ModelCountingProblem readModelCountingProblem(Path path) throws IOException {
         MappedProblem p = readMappedProblem(path);
-        Scope s = readScopeFromCIndLines(path);
-        return new ScopedMappedProblem(p, s);
+        Scope s = readScopeLines(path, "c ind ");
+        return new ModelCountingProblem(p, s);
+    }
+
+    public static MaxModelCountingProblem readMaxModelCountingProblem(Path path) throws IOException {
+        MappedProblem p = readMappedProblem(path);
+        Scope countVars = readScopeLines(path, "c ind ");
+        Scope maxVars = readScopeLines(path, "c max ");
+
+        if (maxVars.getVariables().findAny().isPresent())
+            return new MaxModelCountingProblem(p, countVars, maxVars);
+        else
+            return new ModelCountingProblem(p, countVars);
     }
 
     public static Stream<String> problemLines(Problem problem) {
@@ -123,8 +134,8 @@ public class IO {
         return "" + (literal.getValue() ? 1 : -1) * literal.getVariable();
     }
 
-    public static String cIndLine(Scope scope) {
-        return "c ind " + scope.getVariables().mapToObj(Integer::toString).collect(Collectors.joining(" ")) + " 0";
+    public static String scopeLine(Scope scope, String prefix) {
+        return prefix + scope.getVariables().mapToObj(Integer::toString).collect(Collectors.joining(" ")) + " 0";
     }
 
     public static String crLine(Scope scope) {
@@ -154,12 +165,12 @@ public class IO {
         }
     }
 
-    public static void write(ScopedMappedProblem problem, Path path) throws IOException {
+    public static void write(ModelCountingProblem problem, Path path) throws IOException {
         Stream<String> lines = Stream.of(
                 problemLines(problem.getProblem()),
                 variableTableLines(problem.getVariableTable()),
-                Stream.of(cIndLine(problem.getScope())),
-                Stream.of(crLine(problem.getScope()))
+                Stream.of(scopeLine(problem.getCountVars(), "c ind ")),
+                Stream.of(crLine(problem.getCountVars()))
         ).flatMap(Function.identity());
 
         try (BufferedWriter writer = Files.newBufferedWriter(path)) {
@@ -167,7 +178,24 @@ public class IO {
         }
 
         try (BufferedWriter writer = Files.newBufferedWriter(path.resolveSibling(path.getFileName() + ".scope"))) {
-            FilesUtil.writeLines(writer, problem.getScope().getVariables().mapToObj(Integer::toString));
+            FilesUtil.writeLines(writer, problem.getCountVars().getVariables().mapToObj(Integer::toString));
+        }
+    }
+
+    public static void write(MaxModelCountingProblem problem, Path path) throws IOException {
+        Stream<String> lines = Stream.of(
+                problemLines(problem.getProblem()),
+                variableTableLines(problem.getVariableTable()),
+                Stream.of(scopeLine(problem.getCountVars(), "c ind ")),
+                Stream.of(scopeLine(problem.getMaxVars(), "c max "))
+        ).flatMap(Function.identity());
+
+        try (BufferedWriter writer = Files.newBufferedWriter(path)) {
+            FilesUtil.writeLines(writer, lines);
+        }
+
+        try (BufferedWriter writer = Files.newBufferedWriter(path.resolveSibling(path.getFileName() + ".scope"))) {
+            FilesUtil.writeLines(writer, problem.getCountVars().getVariables().mapToObj(Integer::toString));
         }
     }
 }

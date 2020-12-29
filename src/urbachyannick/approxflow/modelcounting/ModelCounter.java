@@ -1,9 +1,9 @@
 package urbachyannick.approxflow.modelcounting;
 
 import urbachyannick.approxflow.IOCallbacks;
-import urbachyannick.approxflow.cnf.ScopedMappedProblem;
+import urbachyannick.approxflow.cnf.ModelCountingProblem;
 
 @FunctionalInterface
 public interface ModelCounter {
-    double count(ScopedMappedProblem problem, IOCallbacks ioCallbacks) throws ModelCountingException;
+    double count(ModelCountingProblem problem, IOCallbacks ioCallbacks) throws ModelCountingException;
 }

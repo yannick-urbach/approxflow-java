@@ -6,7 +6,7 @@ import urbachyannick.approxflow.cnf.CnfException;
 import urbachyannick.approxflow.cnf.*;
 import urbachyannick.approxflow.codetransformation.*;
 import urbachyannick.approxflow.javasignatures.*;
-import urbachyannick.approxflow.modelcounting.ModelCounter;
+import urbachyannick.approxflow.modelcounting.MaxModelCounter;
 import urbachyannick.approxflow.soot.LoopReplacer;
 
 import java.util.*;
@@ -22,7 +22,7 @@ public class BlackboxSplitter implements FlowAnalyzer {
 
     private final List<Transformation> preSplitTransformations;
 
-    public BlackboxSplitter(CnfGenerator cnfGenerator, ModelCounter modelCounter) {
+    public BlackboxSplitter(CnfGenerator cnfGenerator, MaxModelCounter modelCounter) {
         preSplitTransformations = new ArrayList<Transformation>() {{
             add(new UnrollLoops());
             add(new InlineMethods());
@@ -36,6 +36,7 @@ public class BlackboxSplitter implements FlowAnalyzer {
                 cnfGenerator,
                 Stream.of(new ReturnValueInput()),
                 Stream.of(new BlackboxIntermediateOutput()),
+                Stream.of(new ReturnValuePublicInput()),
                 modelCounter
         );
 
@@ -50,6 +51,7 @@ public class BlackboxSplitter implements FlowAnalyzer {
                         new OutputArray(),
                         new ParameterOutputOverApproximated()
                 ),
+                Stream.of(new ReturnValuePublicInput()),
                 modelCounter
         );
 

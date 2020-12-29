@@ -8,7 +8,7 @@ import urbachyannick.approxflow.cnf.Jbmc;
 import urbachyannick.approxflow.codetransformation.Compiler;
 import urbachyannick.approxflow.codetransformation.*;
 import urbachyannick.approxflow.informationflow.*;
-import urbachyannick.approxflow.modelcounting.ScalMC;
+import urbachyannick.approxflow.modelcounting.*;
 
 import javax.xml.parsers.*;
 import javax.xml.xpath.*;
@@ -75,7 +75,10 @@ public class Main implements Runnable {
 
         FlowAnalyzer analyzer = new BlackboxSplitter(
                 new Jbmc(partialLoops, unwind),
-                new ScalMC()
+                new CounterPicker(
+                        new MaxCount(1),
+                        new ScalMC()
+                )
         );
 
         if (operationMode.test)
