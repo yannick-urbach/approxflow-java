@@ -29,10 +29,12 @@ public class MaxCount implements MaxModelCounter {
             throw new ModelCountingException("Can not write temporary CNF file", e);
         }
 
-        try {
-            Files.createSymbolicLink(Paths.get("util/maxcount/scalmc"), Paths.get("scalmc-binaries/x86_64-linux/scalmc"));
-        } catch (IOException | UnsupportedOperationException e) {
-            throw new ModelCountingException("Failed to link scalmc binary", e);
+        if (!Files.exists(Paths.get("util/maxcount/scalmc"))) {
+            try {
+                Files.createSymbolicLink(Paths.get("util/maxcount/scalmc"), Paths.get("scalmc-binaries/x86_64-linux/scalmc"));
+            } catch (IOException | UnsupportedOperationException e) {
+                throw new ModelCountingException("Failed to link scalmc binary", e);
+            }
         }
 
 
@@ -61,7 +63,7 @@ public class MaxCount implements MaxModelCounter {
                 e.printStackTrace();
             }
         }
-//
+
         Pattern pattern = Pattern.compile("c Estimated max-count: ([\\d.]+) x (\\d+)\\^(\\d+)");
 
         try {

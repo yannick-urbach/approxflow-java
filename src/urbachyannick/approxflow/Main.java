@@ -61,6 +61,9 @@ public class Main implements Runnable {
     @Option(names = {"--eclipse"}, description = "use eclipse java compiler instead of javac")
     private boolean eclipse;
 
+    @Option(names = {"--maxcount-k"}, description = "passed to maxcount", paramLabel = "k", defaultValue = "1")
+    private int maxcountK;
+
     // endregion
 
 
@@ -76,7 +79,7 @@ public class Main implements Runnable {
         FlowAnalyzer analyzer = new BlackboxSplitter(
                 new Jbmc(partialLoops, unwind),
                 new CounterPicker(
-                        new MaxCount(1),
+                        new MaxCount(maxcountK),
                         new ScalMC()
                 )
         );
