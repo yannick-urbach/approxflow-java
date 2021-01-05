@@ -44,7 +44,7 @@ public class Jbmc implements CnfGenerator {
             add("jbmc");
             add(classWithMainMethod.get().name);
             add("--classpath");
-            add(classesPath.toAbsolutePath().toString() + ":" + Paths.get("res/jbmc-core-models.jar").toAbsolutePath().toString());
+            add(classesPath.toAbsolutePath().toString() + ":" + ioCallbacks.findInProgramDirectory(Paths.get("res/jbmc-core-models.jar")).toString());
             add("--dimacs");
             add("--outfile");
             add(cnfFilePath.toAbsolutePath().toString());

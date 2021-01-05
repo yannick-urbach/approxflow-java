@@ -22,7 +22,8 @@ In the project root directory, run
 
 ### Runtime Requirements
 - JDK version 1.8
-- JBMC version &ge; 5.17 
+- JBMC version &ge; 5.17
+- ApproxMC version &ge; 4
 
 ### Normal Usage
 To analyze the information flow of a Java program run the following command in
@@ -63,5 +64,8 @@ To add a new test case,
 Do not delete temporary files created for and by external tools used by the
 program
 
-#### --blackbox-experimental
-Use experimental blackbox handling
+#### --maxcount-k *k*
+Passed as k parameter to MaxCount. Default is 1.
+
+#### --eclipse
+Use the Eclipse Java Compiler instead of javac

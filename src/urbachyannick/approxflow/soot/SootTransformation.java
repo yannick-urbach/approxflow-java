@@ -11,7 +11,6 @@ public abstract class SootTransformation implements Transformation {
 
     @Override
     public Stream<ClassNode> apply(Stream<ClassNode> asmInputClasses) throws InvalidTransformationException {
-        AsmSootConverter.initSoot();
         Stream<SootClass> sootInputClasses = AsmSootConverter.toSoot(asmInputClasses);
         Stream<SootClass> sootOutputClasses = applySoot(sootInputClasses);
         return AsmSootConverter.toAsm(sootOutputClasses);

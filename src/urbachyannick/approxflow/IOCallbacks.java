@@ -16,9 +16,11 @@ public abstract class IOCallbacks implements Closeable {
     }
 
     private final List<Temporary> temporaries;
+    private final Path programRoot;
 
-    public IOCallbacks() {
+    public IOCallbacks(Path programRoot) {
         temporaries = new ArrayList<>();
+        this.programRoot = programRoot;
     }
 
     protected abstract Path createTemporaryFileImpl(String name);
@@ -44,6 +46,14 @@ public abstract class IOCallbacks implements Closeable {
         Files.createDirectories(p);
         temporaries.add(new Temporary(name, p));
         return p;
+    }
+
+    public Path findInProgramDirectory(Path path) {
+        return programRoot.resolve(path).toAbsolutePath();
+    }
+
+    public Path getProgramDirectory() {
+        return programRoot;
     }
 
     @Override

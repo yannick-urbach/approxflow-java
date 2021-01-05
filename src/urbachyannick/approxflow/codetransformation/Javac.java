@@ -12,7 +12,7 @@ public class Javac implements Compiler {
 
     @Override
     public Stream<ClassNode> compile(Path classpath, IOCallbacks ioCallbacks) throws CompilationError {
-        Path resPath = Paths.get("res").toAbsolutePath();
+        Path resPath = ioCallbacks.findInProgramDirectory(Paths.get("res"));
         List<String> command = new ArrayList<>();
 
         Path targetDir = null;

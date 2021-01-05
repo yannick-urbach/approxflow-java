@@ -8,10 +8,11 @@ import soot.options.Options;
 import urbachyannick.approxflow.Fail;
 
 import java.io.*;
+import java.nio.file.Path;
 import java.util.stream.Stream;
 
 public class AsmSootConverter {
-    public static void initSoot() {
+    public static void initSoot(Path resPath) {
         soot.G.reset();
         soot.G g = soot.G.v();
 
@@ -35,8 +36,8 @@ public class AsmSootConverter {
 
         Scene scene = soot.Scene.v();
         scene.setSootClassPath(scene.defaultClassPath());
-        scene.extendSootClassPath("/home/yannick/Bachelorarbeit/approxflow-java/res/");
-        scene.extendSootClassPath("/home/yannick/Bachelorarbeit/approxflow-java/res/jbmc-core-models.jar");
+        scene.extendSootClassPath(resPath.toString());
+        scene.extendSootClassPath(resPath.resolve("jbmc-core-models.jar").toString());
     }
 
     public static SootClass toSoot(ClassNode asmClass) {

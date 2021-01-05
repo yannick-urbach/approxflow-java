@@ -12,8 +12,8 @@ public class EclipseJavaCompiler implements Compiler {
 
     @Override
     public Stream<ClassNode> compile(Path classpath, IOCallbacks ioCallbacks) throws CompilationError {
-        Path compilerPath = Paths.get("util", "ecj-4.18.jar").toAbsolutePath();
-        Path resPath = Paths.get("res").toAbsolutePath();
+        Path compilerPath = ioCallbacks.findInProgramDirectory(Paths.get("util", "ecj-4.18.jar"));
+        Path resPath = ioCallbacks.findInProgramDirectory(Paths.get("res"));
         List<String> command = new ArrayList<>();
 
         Path targetDir = null;

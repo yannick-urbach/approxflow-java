@@ -9,6 +9,7 @@ import urbachyannick.approxflow.codetransformation.Compiler;
 import urbachyannick.approxflow.codetransformation.*;
 import urbachyannick.approxflow.informationflow.*;
 import urbachyannick.approxflow.modelcounting.*;
+import urbachyannick.approxflow.soot.AsmSootConverter;
 
 import javax.xml.parsers.*;
 import javax.xml.xpath.*;
@@ -43,14 +44,8 @@ public class Main implements Runnable {
         private boolean test;
     }
 
-    @Option(names = {"--write-cnf"}, description = "write the cnf file to disk")
-    private boolean writeCnf;
-
     @Option(names = {"--keep-intermediate"}, description = "keep intermediate results")
     private boolean keepIntermediate;
-
-    @Option(names = {"-c", "--cnf-only"}, description = "print only the cnf")
-    private boolean cnfOnly;
 
     @Option(names = {"--partial-loops"}, description = "passed to jbmc")
     private boolean partialLoops;
@@ -64,6 +59,9 @@ public class Main implements Runnable {
     @Option(names = {"--maxcount-k"}, description = "passed to maxcount", paramLabel = "k", defaultValue = "1")
     private int maxcountK;
 
+    @Option(names = {"--program-dir"}, description = "root directory of approxflow-java; filled in by launcher script", paramLabel = "path", defaultValue = "./")
+    private Path programRoot;
+
     // endregion
 
 
@@ -74,6 +72,8 @@ public class Main implements Runnable {
      */
     @Override
     public void run() {
+        AsmSootConverter.initSoot(programRoot.resolve("res"));
+
         Compiler compiler = eclipse ? new EclipseJavaCompiler() : new Javac();
 
         FlowAnalyzer analyzer = new BlackboxSplitter(
@@ -92,7 +92,7 @@ public class Main implements Runnable {
 
 
     public void runRegular(Compiler compiler, FlowAnalyzer analyzer) {
-        IOCallbacks ioCallbacks = new IOCallbacks() {
+        IOCallbacks ioCallbacks = new IOCallbacks(programRoot) {
             @Override
             public Path createTemporaryFileImpl(String name) {
                 return operationMode.classpath.resolve(Paths.get("intermediate", name));
@@ -112,9 +112,7 @@ public class Main implements Runnable {
         try (IOCallbacks c = ioCallbacks) {
             Stream<ClassNode> classes = compiler.compile(operationMode.classpath, c);
             double informationFlow = analyzer.analyzeInformationFlow(classes, c);
-
-            if (!cnfOnly)
-                System.out.println("Approximated flow is: " + informationFlow);
+            System.out.println("Approximated flow is: " + informationFlow);
         } catch(Fail f) {
             fail(f);
         } catch (CompilationError e) {
@@ -136,7 +134,7 @@ public class Main implements Runnable {
 
     private void runTests(Compiler compiler, FlowAnalyzer analyzer) {
         try {
-            Path testRoot = Paths.get("test").toAbsolutePath();
+            Path testRoot = programRoot.resolve("test").toAbsolutePath();
 
             Files
                     .list(testRoot)
@@ -193,7 +191,7 @@ public class Main implements Runnable {
             }};
         }
 
-        IOCallbacks ioCallbacks = new IOCallbacks() {
+        IOCallbacks ioCallbacks = new IOCallbacks(programRoot) {
             @Override
             protected Path createTemporaryFileImpl(String name) {
                 return testDirectory.resolve(Paths.get("intermediate", name));
