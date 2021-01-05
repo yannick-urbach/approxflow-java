@@ -80,7 +80,7 @@ public class Main implements Runnable {
                 new Jbmc(partialLoops, unwind),
                 new CounterPicker(
                         new MaxCount(maxcountK),
-                        new ScalMC()
+                        new ApproxMC()
                 )
         );
 

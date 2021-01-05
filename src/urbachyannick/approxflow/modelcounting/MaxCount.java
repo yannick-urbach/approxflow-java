@@ -1,6 +1,6 @@
 package urbachyannick.approxflow.modelcounting;
 
-import urbachyannick.approxflow.IOCallbacks;
+import urbachyannick.approxflow.*;
 import urbachyannick.approxflow.cnf.*;
 
 import java.io.IOException;
@@ -31,9 +31,11 @@ public class MaxCount implements MaxModelCounter {
 
         if (!Files.exists(Paths.get("util/maxcount/scalmc"))) {
             try {
-                Files.createSymbolicLink(Paths.get("util/maxcount/scalmc"), Paths.get("scalmc-binaries/x86_64-linux/scalmc"));
+                Path approxmc = FilesUtil.resolveFromPathVariable(Paths.get("approxmc"))
+                        .orElseThrow(() -> new IOException("ApproxMC binary not found"));
+                Files.createSymbolicLink(Paths.get("util/maxcount/scalmc"), approxmc);
             } catch (IOException | UnsupportedOperationException e) {
-                throw new ModelCountingException("Failed to link scalmc binary", e);
+                throw new ModelCountingException("Failed to link approxmc binary", e);
             }
         }
 

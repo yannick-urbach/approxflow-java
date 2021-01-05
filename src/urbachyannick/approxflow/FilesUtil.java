@@ -2,6 +2,7 @@ package urbachyannick.approxflow;
 
 import java.io.*;
 import java.nio.file.*;
+import java.util.Optional;
 import java.util.regex.*;
 import java.util.stream.Stream;
 
@@ -87,5 +88,13 @@ public class FilesUtil {
                 throw (IOException) e.getCause();
             else throw e;
         }
+    }
+
+    public static Optional<Path> resolveFromPathVariable(Path path) {
+        return Pattern.compile(":")
+                .splitAsStream(System.getenv("PATH"))
+                .map(directory -> Paths.get(directory).resolve(path))
+                .filter(Files::exists)
+                .findFirst();
     }
 }
