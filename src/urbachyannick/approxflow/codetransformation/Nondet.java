@@ -51,6 +51,12 @@ public class Nondet {
                 instructions.add(new FieldInsnNode(Opcodes.PUTFIELD, classNode.name, field.name, field.desc));
             }
 
+            Optional<MethodNode> checkInvariant = findMethod(classNode, classNode.name, "$$checkInvariant", "()V");
+            checkInvariant.ifPresent(m -> {
+                instructions.add(new InsnNode(Opcodes.DUP));
+                instructions.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, classNode.name, m.name, "()V"));
+            });
+
             return;
         }
 

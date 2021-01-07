@@ -139,6 +139,14 @@ public class BytecodeUtil {
                 .findFirst();
     }
 
+    public static boolean hasBody(MethodNode method) {
+        return !(hasFlag(method.access, Opcodes.ACC_ABSTRACT) || hasFlag(method.access, Opcodes.ACC_NATIVE));
+    }
+
+    public static boolean isReturnOpcode(int opcode) {
+        return Arrays.stream(PrimitiveType.values()).anyMatch(t -> t.getReturnOpcode() == opcode);
+    }
+
     // copy [start, end) and insert behind target
     // returns end label
     public static LabelNode copyRange(InsnList instructions, AbstractInsnNode start, AbstractInsnNode end, AbstractInsnNode target) {

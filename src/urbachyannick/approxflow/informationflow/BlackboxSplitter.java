@@ -29,6 +29,7 @@ public class BlackboxSplitter implements FlowAnalyzer {
             add(new LoopReplacer());
             add(new MethodOfInterestTransform());
             add(new AssertToAssume());
+            add(new ObjectInvariants());
             add(new AddDummyThrow());
         }};
 
