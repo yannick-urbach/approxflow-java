@@ -44,22 +44,28 @@ public class LoopReplacer extends SootTransformation {
             return;
 
         Body body = method.retrieveActiveBody();
-        BlockGraph graph = new BriefBlockGraph(body);
 
-        List<Tree<Loop>> loopHierarchy = LoopFinder.findLoops(graph);
+        List<Tree<Loop>> loopHierarchy;
 
         // apply to topmost loops
-        for (Tree<Loop> t : loopHierarchy) {
-            apply(method, t.getValue(), classes);
+        // regenerate block graph after every loop because the body changes
+        while (true) {
+            BlockGraph graph = new BriefBlockGraph(body);
+            loopHierarchy = LoopFinder.findLoops(graph);
+
+            if (loopHierarchy.size() == 0)
+                break;
+
+            apply(method, graph, loopHierarchy.get(0).getValue(), classes);
         }
     }
 
-    private void apply(SootMethod method, Loop loop, List<SootClass> classes) throws InvalidTransformationException {
+    private void apply(SootMethod method, BlockGraph graph, Loop loop, List<SootClass> classes) throws InvalidTransformationException {
         Body body = method.retrieveActiveBody();
-        BlockGraph graph = new BriefBlockGraph(body);
         LocalUses localUses = LocalUses.Factory.newLocalUses(body);
 
         // find variables used in loop
+        Unit loopHeadUnit = loop.getHeader().getHead();
         List<Block> loopBodyBlocks = loop.getLoopBodyBlocks().collect(Collectors.toList());
 
         List<Block> otherBlocks = graph.getBlocks().stream()
@@ -106,7 +112,7 @@ public class LoopReplacer extends SootTransformation {
                 returnObject,
                 blackboxCallExpression
         );
-        body.getUnits().insertBefore(blackboxCallStatement, loop.getHeader().getHead());
+        body.getUnits().insertBefore(blackboxCallStatement, loopHeadUnit);
 
         int i = 0;
         for (Value variable : externalVariableModifications) {
@@ -114,13 +120,11 @@ public class LoopReplacer extends SootTransformation {
             returnClass.addField(field);
             Value fieldAccessStatement = Jimple.v().newInstanceFieldRef(returnObject, field.makeRef());
             Unit assignStatement = Jimple.v().newAssignStmt(variable, fieldAccessStatement);
-            body.getUnits().insertBefore(assignStatement, loop.getHeader().getHead());
+            body.getUnits().insertBefore(assignStatement, loopHeadUnit);
         }
 
-        loop.getHeader().getHead().redirectJumpsToThisTo(blackboxCallStatement);
-
-        for (Block b : loopBodyBlocks)
-            getUnits(b).forEach(u -> body.getUnits().remove(u));
+        loopHeadUnit.redirectJumpsToThisTo(blackboxCallStatement);
+        loopBodyUnits.forEach(u -> body.getUnits().remove(u));
 
         methodsGenerated++;
     }
