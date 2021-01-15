@@ -40,8 +40,8 @@ public class Main implements Runnable {
         @Parameters(index = "0", paramLabel = "classpath", description = "classpath containing the source files")
         private Path classpath;
 
-        @Option(names = {"--tests"}, description = "run tests")
-        private boolean test;
+        @Option(names = {"--tests"}, description = "run tests", paramLabel = "testroot", arity = "0..1", defaultValue = "___not_test_mode___", fallbackValue = "test")
+        private Path testroot;
     }
 
     @Option(names = {"--keep-intermediate"}, description = "keep intermediate results")
@@ -84,8 +84,8 @@ public class Main implements Runnable {
                 )
         );
 
-        if (operationMode.test)
-            runTests(compiler, analyzer);
+        if (!operationMode.testroot.equals(Paths.get("___not_test_mode___")))
+            runTests(compiler, analyzer, operationMode.testroot);
         else
             runRegular(compiler, analyzer);
     }
@@ -130,14 +130,22 @@ public class Main implements Runnable {
         public boolean success;
         public String message;
         public Path testPath;
+        public long compileTime = -1; // nanoseconds
+        public long analyzeTime = -1; // nanoseconds
     }
 
-    private void runTests(Compiler compiler, FlowAnalyzer analyzer) {
+    private void runTests(Compiler compiler, FlowAnalyzer analyzer, Path testRootArg) {
         try {
-            Path testRoot = programRoot.resolve("test").toAbsolutePath();
+            Path testRoot = testRootArg.toAbsolutePath();
+
+            if (!Files.exists(testRoot))
+                testRoot = programRoot.resolve(testRootArg).toAbsolutePath();
+
+            if (!Files.exists(testRoot))
+                fail("test root " + testRootArg.toString() + " not found");
 
             Files
-                    .list(testRoot)
+                    .walk(testRoot)
                     .filter(t ->
                             Files.isDirectory(t) &&
                             Files.exists(t.resolve("config.xml"))
@@ -148,7 +156,11 @@ public class Main implements Runnable {
                             System.out.println("SKIPPED: " + r.testPath.getFileName());
                         else {
                             writeTestResult(r);
-                            System.out.println((r.success ? "SUCCESS: " : "FAIL:    ") + r.testPath.getFileName());
+                            System.out.println(
+                                    (r.success ? "SUCCESS: " : "FAIL:    ") +
+                                    r.testPath.getFileName() +
+                                    (r.compileTime != -1 && r.analyzeTime != -1 ? " (" + ((r.compileTime + r.analyzeTime) / 1000000 + "ms)") : "")
+                            );
                         }
                     });
 
@@ -164,6 +176,9 @@ public class Main implements Runnable {
         double minFlow;
         double maxFlow;
 
+        TestResult result = new TestResult();
+        result.testPath = testDirectory;
+
         try {
             Document document = DocumentBuilderFactory
                     .newInstance()
@@ -174,21 +189,17 @@ public class Main implements Runnable {
 
             String skipText = xPath.evaluate("/test/skip", document);
             if (skipText != null && skipText.trim().equals("true")) {
-                return new TestResult() {{
-                    skipped = true;
-                    testPath = testDirectory;
-                }};
+                result.skipped = true;
+                return result;
             }
 
             minFlow = Double.parseDouble(xPath.evaluate("/test/minflow", document));
             maxFlow = Double.parseDouble(xPath.evaluate("/test/maxflow", document));
 
         } catch (ParserConfigurationException | java.io.IOException | SAXException | XPathExpressionException e) {
-            return new TestResult() {{
-                testPath = testDirectory;
-                success = false;
-                message = "Can not read config\n" + e.toString();
-            }};
+            result.success = false;
+            result.message = "Can not read config\n" + e.toString();
+            return result;
         }
 
         IOCallbacks ioCallbacks = new IOCallbacks(programRoot) {
@@ -209,35 +220,34 @@ public class Main implements Runnable {
         };
 
         try (IOCallbacks c = ioCallbacks) {
+
+            long start = System.nanoTime();
             Stream<ClassNode> classes = compiler.compile(testDirectory, c);
+            long compileDone = System.nanoTime();
             double informationFlow = analyzer.analyzeInformationFlow(classes, c);
+            long analysisDone = System.nanoTime();
+
+            result.compileTime = compileDone - start;
+            result.analyzeTime = analysisDone - compileDone;
 
             if (informationFlow < minFlow - 0.2) {
-                return new TestResult() {{
-                    testPath = testDirectory;
-                    success = false;
-                    message = "flow too low: " + informationFlow + " (should be >= " + minFlow + ")";
-                }};
+                result.success = false;
+                result.message = "flow too low: " + informationFlow + " (should be >= " + minFlow + ")";
+                return result;
             } else if (informationFlow > maxFlow + 0.2) {
-                return new TestResult() {{
-                    testPath = testDirectory;
-                    success = false;
-                    message = "flow too high: " + informationFlow + " (should be <= " + minFlow + ")";
-                }};
+                result.success = false;
+                result.message = "flow too high: " + informationFlow + " (should be <= " + minFlow + ")";
+                return result;
             } else {
-                return new TestResult() {{
-                    testPath = testDirectory;
-                    success = true;
-                    message = "flow within bounds: " + informationFlow;
-                }};
+                result.success = true;
+                result.message = "flow within bounds: " + informationFlow;
+                return result;
             }
 
         } catch (Exception e) {
-            return new TestResult() {{
-                testPath = testDirectory;
-                success = false;
-                message = "Exception during analysis\n" + throwableToString(e);
-            }};
+            result.success = false;
+            result.message = "Exception during analysis\n" + throwableToString(e);
+            return result;
         }
     }
 
@@ -245,6 +255,17 @@ public class Main implements Runnable {
         try {
             try (BufferedWriter writer = Files.newBufferedWriter(result.testPath.resolve("result.txt"))) {
                 FilesUtil.writeLines(writer, Stream.of(result.success ? "SUCCESS" : "FAIL", result.message));
+
+                if (result.compileTime < 0)
+                    return;
+
+                writer.write("compile duration: " + (result.compileTime / 1000000) + "ms\n");
+
+                if (result.analyzeTime < 0)
+                    return;
+
+                writer.write("analysis duration: " + (result.analyzeTime / 1000000) + "ms\n");
+                writer.write("total duration: " + ((result.compileTime + result.analyzeTime) / 1000000) + "ms\n");
             }
         } catch (IOException e) {
             fail("Can not write test result");
