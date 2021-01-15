@@ -8,36 +8,31 @@ import java.nio.file.*;
 import java.util.*;
 import java.util.stream.*;
 
-public class EclipseJavaCompiler implements Compiler {
-
+public class Kotlinc implements Compiler {
     @Override
     public Stream<ClassNode> compile(Path classpath, IOCallbacks ioCallbacks) throws CompilationError {
-        Path compilerPath = ioCallbacks.findInProgramDirectory(Paths.get("util", "ecj-4.18.jar"));
         Path resPath = ioCallbacks.findInProgramDirectory(Paths.get("res"));
         List<String> command = new ArrayList<>();
 
         Path targetDir = null;
         try {
-            targetDir = ioCallbacks.createTemporaryDirectory("ecj-output");
+            targetDir = ioCallbacks.createTemporaryDirectory("kotlinc-output");
         } catch (IOException e) {
-            throw new CompilationError("Failed to create output directory", e);
+            throw new CompilationError("Failed create output directory", e);
         }
 
         try {
-            command.add("java");
-            command.add("-jar");
-            command.add(compilerPath.toString());
-            command.add("-1.8");
+            command.add("kotlinc");
+            command.add("-jvm-target");
+            command.add("1.8");
             command.add("-classpath");
             command.add(resPath.resolve("jbmc-core-models.jar").toString() + ":" + resPath.toString());
-            command.add("-g");
-            command.add("-parameters");
             command.add("-d");
             command.add(targetDir.toString());
 
             List<Path> sourceFiles = Files
                     .walk(classpath)
-                    .filter(p -> p.toString().endsWith(".java"))
+                    .filter(p -> p.toString().endsWith(".kt"))
                     .collect(Collectors.toList());
 
             if (sourceFiles.size() == 0)
@@ -52,7 +47,7 @@ public class EclipseJavaCompiler implements Compiler {
         }
 
         try {
-            ProcessBuilder.Redirect out = ProcessBuilder.Redirect.to(ioCallbacks.createTemporaryFile("ecj-log.txt").toFile());
+            ProcessBuilder.Redirect out = ProcessBuilder.Redirect.to(ioCallbacks.createTemporaryFile("kotlinc-log.txt").toFile());
 
             Process process = new ProcessBuilder()
                     .command(command)
@@ -62,15 +57,15 @@ public class EclipseJavaCompiler implements Compiler {
             process.waitFor();
 
             if (process.exitValue() != 0)
-                throw new CompilationError("ecj returned error code " + process.exitValue());
+                throw new CompilationError("kotlinc returned error code " + process.exitValue());
         } catch (IOException | InterruptedException e) {
-            throw new CompilationError("Failed to run ecj", e);
+            throw new CompilationError("Failed to run kotlinc", e);
         }
 
         try {
             return IO.readAll(targetDir);
         } catch (IOException e) {
-            throw new CompilationError("Failed to run ecj");
+            throw new CompilationError("Failed to run kotlinc");
         }
     }
 }

@@ -15,7 +15,8 @@ import javax.xml.parsers.*;
 import javax.xml.xpath.*;
 import java.io.*;
 import java.nio.file.*;
-import java.util.stream.Stream;
+import java.util.*;
+import java.util.stream.*;
 
 import static picocli.CommandLine.*;
 import static urbachyannick.approxflow.MiscUtil.throwableToString;
@@ -74,7 +75,10 @@ public class Main implements Runnable {
     public void run() {
         AsmSootConverter.initSoot(programRoot.resolve("res"));
 
-        Compiler compiler = eclipse ? new EclipseJavaCompiler() : new Javac();
+        Stream<Compiler> compilers = Stream.of(
+                new Kotlinc(),
+                eclipse ? new EclipseJavaCompiler() : new Javac()
+        );
 
         FlowAnalyzer analyzer = new BlackboxSplitter(
                 new Jbmc(partialLoops, unwind),
@@ -85,13 +89,13 @@ public class Main implements Runnable {
         );
 
         if (!operationMode.testroot.equals(Paths.get("___not_test_mode___")))
-            runTests(compiler, analyzer, operationMode.testroot);
+            runTests(compilers, analyzer, operationMode.testroot);
         else
-            runRegular(compiler, analyzer);
+            runRegular(compilers, analyzer);
     }
 
 
-    public void runRegular(Compiler compiler, FlowAnalyzer analyzer) {
+    public void runRegular(Stream<Compiler> compilers, FlowAnalyzer analyzer) {
         IOCallbacks ioCallbacks = new IOCallbacks(programRoot) {
             @Override
             public Path createTemporaryFileImpl(String name) {
@@ -110,8 +114,13 @@ public class Main implements Runnable {
         };
 
         try (IOCallbacks c = ioCallbacks) {
-            Stream<ClassNode> classes = compiler.compile(operationMode.classpath, c);
-            double informationFlow = analyzer.analyzeInformationFlow(classes, c);
+            Iterator<Compiler> i = compilers.iterator();
+            Stream.Builder<ClassNode> classesBuilder = Stream.builder();
+
+            while (i.hasNext())
+                i.next().compile(operationMode.classpath, c).forEach(classesBuilder);
+
+            double informationFlow = analyzer.analyzeInformationFlow(classesBuilder.build(), c);
             System.out.println("Approximated flow is: " + informationFlow);
         } catch(Fail f) {
             fail(f);
@@ -134,7 +143,9 @@ public class Main implements Runnable {
         public long analyzeTime = -1; // nanoseconds
     }
 
-    private void runTests(Compiler compiler, FlowAnalyzer analyzer, Path testRootArg) {
+    private void runTests(Stream<Compiler> compilers, FlowAnalyzer analyzer, Path testRootArg) {
+        List<Compiler> compilerList = compilers.collect(Collectors.toList());
+
         try {
             Path testRoot = testRootArg.toAbsolutePath();
 
@@ -150,7 +161,7 @@ public class Main implements Runnable {
                             Files.isDirectory(t) &&
                             Files.exists(t.resolve("config.xml"))
                     )
-                    .map(t -> runTest(t, compiler, analyzer))
+                    .map(t -> runTest(t, compilerList.stream(), analyzer))
                     .forEach(r -> {
                         if (r.skipped)
                             System.out.println("SKIPPED: " + r.testPath.getFileName());
@@ -170,7 +181,7 @@ public class Main implements Runnable {
 
     }
 
-    private TestResult runTest(Path testDirectory, Compiler compiler, FlowAnalyzer analyzer) {
+    private TestResult runTest(Path testDirectory, Stream<Compiler> compilers, FlowAnalyzer analyzer) {
         Path configFile = testDirectory.resolve("config.xml");
 
         double minFlow;
@@ -222,9 +233,16 @@ public class Main implements Runnable {
         try (IOCallbacks c = ioCallbacks) {
 
             long start = System.nanoTime();
-            Stream<ClassNode> classes = compiler.compile(testDirectory, c);
+
+            Iterator<Compiler> i = compilers.iterator();
+            Stream.Builder<ClassNode> classesBuilder = Stream.builder();
+
+            while (i.hasNext())
+                i.next().compile(testDirectory, c).forEach(classesBuilder);
+
+
             long compileDone = System.nanoTime();
-            double informationFlow = analyzer.analyzeInformationFlow(classes, c);
+            double informationFlow = analyzer.analyzeInformationFlow(classesBuilder.build(), c);
             long analysisDone = System.nanoTime();
 
             result.compileTime = compileDone - start;
