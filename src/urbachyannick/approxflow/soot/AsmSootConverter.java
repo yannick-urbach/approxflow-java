@@ -18,6 +18,7 @@ public class AsmSootConverter {
 
         soot.options.Options options = soot.options.Options.v();
         boolean b = options.parse(new String[]{
+                "-w",
                 "-keep-line-number",
                 "-p", "jb", "use-original-names:true",
                 "-p", "jb.ulp", "enabled:false",
