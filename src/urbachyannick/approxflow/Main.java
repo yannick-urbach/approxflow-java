@@ -72,8 +72,6 @@ public class Main implements Runnable {
      */
     @Override
     public void run() {
-        AsmSootConverter.initSoot(programRoot.resolve("res"));
-
         Compiler compiler = eclipse ? new EclipseJavaCompiler() : new Javac();
 
         FlowAnalyzer analyzer = new BlackboxSplitter(
@@ -108,6 +106,8 @@ public class Main implements Runnable {
                 return !keepIntermediate;
             }
         };
+
+        AsmSootConverter.initSoot(ioCallbacks);
 
         try (IOCallbacks c = ioCallbacks) {
             Stream<ClassNode> classes = compiler.compile(operationMode.classpath, c);
@@ -218,6 +218,8 @@ public class Main implements Runnable {
                 return !keepIntermediate;
             }
         };
+
+        AsmSootConverter.initSoot(ioCallbacks);
 
         try (IOCallbacks c = ioCallbacks) {
 

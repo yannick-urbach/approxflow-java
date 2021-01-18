@@ -1,6 +1,7 @@
 package urbachyannick.approxflow;
 
 import java.io.*;
+import java.net.URISyntaxException;
 import java.nio.file.*;
 import java.util.*;
 
@@ -54,6 +55,14 @@ public abstract class IOCallbacks implements Closeable {
 
     public Path getProgramDirectory() {
         return programRoot;
+    }
+
+    public Path getJarPath() {
+        try {
+            return new File(IOCallbacks.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toPath().toAbsolutePath();
+        } catch (URISyntaxException e) {
+            throw new Fail("Could not get jar path.");
+        }
     }
 
     @Override
