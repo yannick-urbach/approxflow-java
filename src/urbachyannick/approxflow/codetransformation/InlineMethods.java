@@ -73,10 +73,10 @@ public class InlineMethods implements Transformation {
             this.classMaxRecursions = classMaxRecursions;
         }
 
-        private List<Integer> remapVariables(MethodNode method) {
-            return method.localVariables.stream()
-                    .map(v -> sorter.newLocal(Type.getType(v.desc)))
-                    .collect(Collectors.toList());
+        private Map<Integer, Integer> remapVariables(MethodNode method) {
+            Map<Integer, Integer> varMap = new HashMap<>();
+            method.localVariables.forEach(v -> varMap.put(v.index, sorter.newLocal(Type.getType(v.desc))));
+            return varMap;
         }
 
         private List<TypeSpecifier> getArgumentTypes(MethodNode method) {
@@ -110,7 +110,7 @@ public class InlineMethods implements Transformation {
 
             recursionDepths.descend(calledMethod);
 
-            List<Integer> variableMap = remapVariables(calledMethod);
+            Map<Integer, Integer> variableMap = remapVariables(calledMethod);
             List<TypeSpecifier> argumentTypes = getArgumentTypes(calledMethod);
             TypeSpecifier returnType = TypeSpecifier.parse(Type.getReturnType(calledMethod.desc).getDescriptor(), new MutableInteger(0));
 
