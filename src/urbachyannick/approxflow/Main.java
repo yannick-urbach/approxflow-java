@@ -73,8 +73,6 @@ public class Main implements Runnable {
      */
     @Override
     public void run() {
-        AsmSootConverter.initSoot(programRoot.resolve("res"));
-
         Stream<Compiler> compilers = Stream.of(
                 new Kotlinc(),
                 eclipse ? new EclipseJavaCompiler() : new Javac()
@@ -112,6 +110,8 @@ public class Main implements Runnable {
                 return !keepIntermediate;
             }
         };
+
+        AsmSootConverter.initSoot(ioCallbacks);
 
         try (IOCallbacks c = ioCallbacks) {
             Iterator<Compiler> i = compilers.iterator();
@@ -229,6 +229,8 @@ public class Main implements Runnable {
                 return !keepIntermediate;
             }
         };
+
+        AsmSootConverter.initSoot(ioCallbacks);
 
         try (IOCallbacks c = ioCallbacks) {
 

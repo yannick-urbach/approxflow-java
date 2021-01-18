@@ -12,7 +12,9 @@ public class Javac implements Compiler {
 
     @Override
     public Stream<ClassNode> compile(Path classpath, IOCallbacks ioCallbacks) throws CompilationError {
-        Path resPath = ioCallbacks.findInProgramDirectory(Paths.get("res"));
+        Path coreModelsPath = ioCallbacks.findInProgramDirectory(Paths.get("res/jbmc-core-models.jar"));
+        Path jarPath = ioCallbacks.getJarPath();
+
         List<String> command = new ArrayList<>();
 
         Path targetDir = null;
@@ -25,7 +27,7 @@ public class Javac implements Compiler {
         try {
             command.add("javac");
             command.add("-classpath");
-            command.add(resPath.resolve("jbmc-core-models.jar").toString() + ":" + resPath.toString());
+            command.add(coreModelsPath.toString() + ":" + jarPath.toString());
             command.add("-g");
             command.add("-d");
             command.add(targetDir.toString());

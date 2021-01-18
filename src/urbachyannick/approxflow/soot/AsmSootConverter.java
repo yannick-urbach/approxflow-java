@@ -5,19 +5,23 @@ import org.objectweb.asm.tree.*;
 import soot.*;
 import soot.baf.*;
 import soot.options.Options;
-import urbachyannick.approxflow.Fail;
+import urbachyannick.approxflow.*;
 
 import java.io.*;
-import java.nio.file.Path;
+import java.nio.file.*;
 import java.util.stream.Stream;
 
 public class AsmSootConverter {
-    public static void initSoot(Path resPath) {
+    public static void initSoot(IOCallbacks ioCallbacks) {
+        Path coreModelsPath = ioCallbacks.findInProgramDirectory(Paths.get("res/jbmc-core-models.jar"));
+        Path jarPath = ioCallbacks.getJarPath();
+
         soot.G.reset();
         soot.G g = soot.G.v();
 
         soot.options.Options options = soot.options.Options.v();
         boolean b = options.parse(new String[]{
+                "-w",
                 "-keep-line-number",
                 "-p", "jb", "use-original-names:true",
                 "-p", "jb.ulp", "enabled:false",
@@ -36,8 +40,8 @@ public class AsmSootConverter {
 
         Scene scene = soot.Scene.v();
         scene.setSootClassPath(scene.defaultClassPath());
-        scene.extendSootClassPath(resPath.toString());
-        scene.extendSootClassPath(resPath.resolve("jbmc-core-models.jar").toString());
+        scene.extendSootClassPath(jarPath.toString());
+        scene.extendSootClassPath(coreModelsPath.toString());
     }
 
     public static SootClass toSoot(ClassNode asmClass) {

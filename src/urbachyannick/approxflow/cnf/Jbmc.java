@@ -22,6 +22,9 @@ public class Jbmc implements CnfGenerator {
 
     @Override
     public MappedProblem generate(Stream<ClassNode> classes, IOCallbacks ioCallbacks) throws CnfException {
+        Path coreModelsPath = ioCallbacks.findInProgramDirectory(Paths.get("res/jbmc-core-models.jar"));
+        Path jarPath = ioCallbacks.getJarPath();
+
         List<ClassNode> classesList = classes.collect(Collectors.toList());
 
         Path classesPath;
@@ -44,7 +47,7 @@ public class Jbmc implements CnfGenerator {
             add("jbmc");
             add(classWithMainMethod.get().name);
             add("--classpath");
-            add(classesPath.toAbsolutePath().toString() + ":" + ioCallbacks.findInProgramDirectory(Paths.get("res/jbmc-core-models.jar")).toString());
+            add(classesPath.toAbsolutePath().toString() + ":" + coreModelsPath.toString() + ":" + jarPath.toString());
             add("--dimacs");
             add("--outfile");
             add(cnfFilePath.toAbsolutePath().toString());
