@@ -141,6 +141,7 @@ public class InlineMethods implements Transformation {
                     case AbstractInsnNode.IINC_INSN: {
                         IincInsnNode iincInsnNode = (IincInsnNode) instruction;
                         super.visitIincInsn(variableMap.get(iincInsnNode.var), iincInsnNode.incr);
+                        break;
                     }
 
 
