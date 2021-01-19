@@ -14,19 +14,23 @@ import static urbachyannick.approxflow.codetransformation.BytecodeUtil.*;
 public class InlineMethods implements Transformation {
 
     @Override
-    public Stream<ClassNode> apply(Stream<ClassNode> sourceClasses) {
+    public Stream<ClassNode> apply(Stream<ClassNode> sourceClasses) throws InvalidTransformationException {
         List<ClassNode> classList = sourceClasses.collect(Collectors.toList());
 
-        return classList.stream().map(sourceClass -> {
-            Optional<AnnotationNode> annotationNode = getAnnotation(sourceClass.visibleAnnotations, "Lurbachyannick/approxflow/Inline;");
-            Optional<Integer> maxRecursions = annotationNode.flatMap(a -> getAnnotationValue(a, "recursions")).map(v -> (int) v);
+        try {
+            return classList.stream().map(sourceClass -> {
+                Optional<AnnotationNode> annotationNode = getAnnotation(sourceClass.visibleAnnotations, "Lurbachyannick/approxflow/Inline;");
+                Optional<Integer> maxRecursions = annotationNode.flatMap(a -> getAnnotationValue(a, "recursions")).map(v -> (int) v);
 
-            ClassNode targetClass = new ClassNode(Opcodes.ASM5);
-            CV visitor = new CV(classList, maxRecursions, Opcodes.ASM5, targetClass);
-            sourceClass.accept(visitor);
+                ClassNode targetClass = new ClassNode(Opcodes.ASM5);
+                CV visitor = new CV(classList, maxRecursions, Opcodes.ASM5, targetClass);
+                sourceClass.accept(visitor);
 
-            return targetClass;
-        });
+                return targetClass;
+            });
+        } catch (RuntimeInvalidTransformationException e) {
+            throw new InvalidTransformationException(e);
+        }
     }
 
     private static class RecursionDepthManager {
@@ -129,21 +133,50 @@ public class InlineMethods implements Transformation {
 
             Map<LabelNode, Label> labelMap = new HashMap<>();
 
+            Set<Integer> missingVariables = new HashSet<>();
+
             for (AbstractInsnNode instruction : calledMethod.instructions) {
                 switch(instruction.getType()) {
                     // need to remap local variables
+
                     case AbstractInsnNode.VAR_INSN: {
                         VarInsnNode varInsnNode = (VarInsnNode) instruction;
-                        super.visitVarInsn(varInsnNode.getOpcode(), variableMap.get(varInsnNode.var));
+
+                        Integer mapped = variableMap.get(varInsnNode.var);
+
+                        if (mapped == null) {
+                            // track as missing to check for reads later
+                            missingVariables.add(varInsnNode.var);
+                            super.visitInsn(Opcodes.POP);
+                        } else {
+                            super.visitVarInsn(varInsnNode.getOpcode(), variableMap.get(varInsnNode.var));
+                        }
+
+                        // check if read from missing
+                        if (
+                                isLoadLocalOpcode(instruction.getOpcode()) &&
+                                missingVariables.contains(varInsnNode.var)
+                        ) {
+                            throw new RuntimeInvalidTransformationException("Read from variable without debug information");
+                        }
+
                         break;
                     }
 
                     case AbstractInsnNode.IINC_INSN: {
                         IincInsnNode iincInsnNode = (IincInsnNode) instruction;
-                        super.visitIincInsn(variableMap.get(iincInsnNode.var), iincInsnNode.incr);
+
+                        Integer mapped = variableMap.get(iincInsnNode.var);
+
+                        if (mapped == null) {
+                            // track as missing to check for reads later
+                            missingVariables.add(iincInsnNode.var);
+                        } else {
+                            super.visitIincInsn(variableMap.get(iincInsnNode.var), iincInsnNode.incr);
+                        }
+
                         break;
                     }
-
 
                     // need to remap labels
                     case AbstractInsnNode.LABEL: {

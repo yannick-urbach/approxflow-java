@@ -147,6 +147,10 @@ public class BytecodeUtil {
         return Arrays.stream(PrimitiveType.values()).anyMatch(t -> t.getReturnOpcode() == opcode);
     }
 
+    public static boolean isLoadLocalOpcode(int opcode) {
+        return Arrays.stream(PrimitiveType.values()).anyMatch(t -> t.getLoadLocalOpcode() == opcode);
+    }
+
     // copy [start, end) and insert behind target
     // returns end label
     public static LabelNode copyRange(InsnList instructions, AbstractInsnNode start, AbstractInsnNode end, AbstractInsnNode target) {
