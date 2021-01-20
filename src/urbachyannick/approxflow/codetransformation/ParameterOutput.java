@@ -86,6 +86,8 @@ public class ParameterOutput extends Transformation.PerClassNoExcept {
                 null,
                 null
         );
+        counter.visibleAnnotations = new ArrayList<>();
+        counter.visibleAnnotations.add(new AnnotationNode(Opcodes.ASM5, "Lurbachyannick/approxflow/PublicOutput;"));
         class_.fields.add(counter);
 
         MethodNode overflowMethod = new MethodNode(
