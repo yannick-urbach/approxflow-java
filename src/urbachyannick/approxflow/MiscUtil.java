@@ -4,6 +4,7 @@ import urbachyannick.approxflow.cnf.TrivialMappingValue;
 
 import java.io.*;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 public class MiscUtil {
@@ -62,5 +63,13 @@ public class MiscUtil {
         t.printStackTrace(printWriter);
 
         return stringWriter.toString();
+    }
+
+    public static <T> Stream<T> concat(Stream<T>... streams) {
+        return Arrays.stream(streams).flatMap(Function.identity());
+    }
+
+    public static <T> Stream<T> append(Stream<T> stream, T... elements) {
+        return concat(stream, Arrays.stream(elements));
     }
 }

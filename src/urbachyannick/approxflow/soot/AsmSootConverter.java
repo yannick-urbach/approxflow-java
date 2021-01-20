@@ -47,6 +47,7 @@ public class AsmSootConverter {
     public static SootClass toSoot(ClassNode asmClass) {
         SootClass sootClass = SootClassAdapter.toSoot(asmClass);
         Scene.v().loadNecessaryClasses();
+        Scene.v().addClass(sootClass);
         return sootClass;
     }
 

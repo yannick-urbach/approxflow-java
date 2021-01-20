@@ -7,6 +7,8 @@ import urbachyannick.approxflow.javasignatures.*;
 import java.util.*;
 import java.util.stream.*;
 
+import static urbachyannick.approxflow.MiscUtil.append;
+
 public class BytecodeUtil {
     private static final Map<Integer, Integer> jumpInversions = new HashMap<Integer, Integer>() {
         void putSymmetric(Integer left, Integer right) {
@@ -149,6 +151,15 @@ public class BytecodeUtil {
 
     public static boolean isLoadLocalOpcode(int opcode) {
         return Arrays.stream(PrimitiveType.values()).anyMatch(t -> t.getLoadLocalOpcode() == opcode);
+    }
+
+    public static Stream<ClassNode> findDerived(ClassNode ancestor, List<ClassNode> classes) {
+        return append(
+                classes.stream()
+                    .filter(c -> ancestor.name.equals(c.superName))
+                    .flatMap(c -> findDerived(c, classes)),
+                ancestor
+        );
     }
 
     // copy [start, end) and insert behind target

@@ -64,6 +64,31 @@ public class InlineMethods implements Transformation {
         }
     }
 
+    private static class Candidate {
+        public ClassNode containingClass;
+        public MethodNode method;
+
+        private Candidate(ClassNode containingClass, MethodNode method) {
+            this.containingClass = containingClass;
+            this.method = method;
+        }
+
+        public static List<Candidate> getCandidates(List<ClassNode> classes, ClassNode containingClass, MethodNode method) {
+            List<Candidate> candidates = new ArrayList<>();
+            Iterator<ClassNode> i = findDerived(containingClass, classes).iterator();
+
+            while (i.hasNext()) {
+                ClassNode derived = i.next();
+                Optional<MethodNode> override = findMethod(derived, derived.name, method.name, method.desc);
+
+                if (override.isPresent() && hasBody(override.get()))
+                    candidates.add(new Candidate(derived, override.get()));
+            }
+
+            return candidates;
+        }
+    }
+
     private static class MV extends MethodVisitor {
         public LocalVariablesSorter sorter;
         private final RecursionDepthManager recursionDepths;
@@ -77,10 +102,45 @@ public class InlineMethods implements Transformation {
             this.classMaxRecursions = classMaxRecursions;
         }
 
-        private Map<Integer, Integer> remapVariables(MethodNode method) {
-            Map<Integer, Integer> varMap = new HashMap<>();
-            method.localVariables.forEach(v -> varMap.put(v.index, sorter.newLocal(Type.getType(v.desc))));
-            return varMap;
+        private void remapAndWriteArguments(boolean hasThis, ClassNode owner, MethodNode method, Map<Integer, Integer> varMap) {
+            int varIndex = 0;
+
+            List<TypeSpecifier> argumentTypes = getArgumentTypes(method);
+
+            // remap this
+            if (hasThis) {
+                varMap.put(varIndex, sorter.newLocal(Type.getObjectType(owner.name)));
+                ++varIndex;
+            }
+
+            // remap arguments
+            for (TypeSpecifier argumentType : argumentTypes) {
+                varMap.put(varIndex, sorter.newLocal(Type.getType(argumentType.asTypeSpecifierString())));
+                ++varIndex;
+            }
+
+            // write arguments to variables (inverse order)
+            for (int i = argumentTypes.size() - 1; i >= 0; --i) {
+                --varIndex;
+                super.visitVarInsn(argumentTypes.get(i).asPrimitive().getStoreLocalOpcode(), varMap.get(varIndex));
+            }
+
+            // write this to variable
+            if (hasThis) {
+                --varIndex;
+                super.visitVarInsn(PrimitiveType.ADDRESS.getStoreLocalOpcode(), varMap.get(varIndex));
+            }
+
+            assert varIndex == 0;
+        }
+
+        private void remapLocalVariables(MethodNode method, Map<Integer, Integer> varMap) {
+            for (LocalVariableNode v : method.localVariables) {
+                if (varMap.containsKey(v.index))
+                    continue;
+
+                varMap.put(v.index, sorter.newLocal(Type.getType(v.desc)));
+            }
         }
 
         private List<TypeSpecifier> getArgumentTypes(MethodNode method) {
@@ -90,8 +150,35 @@ public class InlineMethods implements Transformation {
                     .collect(Collectors.toList());
         }
 
+        private boolean methodBlacklisted(MethodNode method) {
+            if (hasAnnotation(method.visibleAnnotations, "Lurbachyannick/approxflow/PrivateInput;"))
+                return true;
+
+            if (hasAnnotation(method.visibleAnnotations, "Lurbachyannick/approxflow/PublicInput;"))
+                return true;
+
+            if (hasAnnotation(method.visibleAnnotations, "Lurbachyannick/approxflow/Blackbox;"))
+                return true;
+
+            if (
+                    method.visibleParameterAnnotations != null &&
+                    Arrays.stream(method.visibleParameterAnnotations)
+                            .anyMatch(a -> hasAnnotation(a, "Lurbachyannick/approxflow/PublicOutput;"))
+            ) {
+                return true;
+            }
+
+            return false;
+        }
+
         @Override
         public void visitMethodInsn(int opcode, String owner, String name, String descriptor, boolean isInterface) {
+
+            if (opcode == Opcodes.INVOKEDYNAMIC) {
+                // not supported for now
+                super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
+                return;
+            }
 
             Optional<ClassNode> ownerClassOptional = findClass(classes.stream(), owner);
             Optional<MethodNode> calledMethodOptional = ownerClassOptional.flatMap(c -> findMethod(c, owner, name, descriptor));
@@ -103,6 +190,7 @@ public class InlineMethods implements Transformation {
 
             if (
                     !calledMethodOptional.isPresent() ||
+                    methodBlacklisted(calledMethodOptional.get()) ||
                     !maxRecursions.isPresent() ||
                     recursionDepths.get(calledMethodOptional.get()) >= maxRecursions.get()
             ) {
@@ -110,32 +198,63 @@ public class InlineMethods implements Transformation {
                 return;
             }
 
+            ClassNode ownerClass = ownerClassOptional.get();
             MethodNode calledMethod = calledMethodOptional.get();
 
-            recursionDepths.descend(calledMethod);
+            List<Candidate> candidates = null;
 
-            Map<Integer, Integer> variableMap = remapVariables(calledMethod);
-            List<TypeSpecifier> argumentTypes = getArgumentTypes(calledMethod);
-            TypeSpecifier returnType = TypeSpecifier.parse(Type.getReturnType(calledMethod.desc).getDescriptor(), new MutableInteger(0));
+            if (!(opcode == Opcodes.INVOKESTATIC || opcode == Opcodes.INVOKESPECIAL)) {
+                // need virtual call resolution
+                // find candidates ahead of time to be able to abort in time if there is none
+                candidates = Candidate.getCandidates(classes, ownerClassOptional.get(), calledMethodOptional.get());
 
-            int argLocalVariableIndex = 0;
+                if (candidates.size() == 0) {
+                    // leave call as it is
+                    super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
+                    return;
+                }
+            }
 
-            // write this to first local variable
-            if (opcode == Opcodes.INVOKEVIRTUAL || opcode == Opcodes.INVOKESPECIAL)
-                visitVarInsn(PrimitiveType.ADDRESS.getStoreLocalOpcode(), variableMap.get(argLocalVariableIndex++));
+            Label returnLabel = new Label(); // label at the end of the inlined code to return to
+            Map<Integer, Integer> varMap = new HashMap<>();
+            remapAndWriteArguments(opcode != Opcodes.INVOKESTATIC, ownerClass, calledMethod, varMap);
 
-            // write arguments to subsequent local variables
-            for (TypeSpecifier argumentType : argumentTypes)
-                visitVarInsn(argumentType.asPrimitive().getStoreLocalOpcode(), variableMap.get(argLocalVariableIndex++));
+            if (opcode == Opcodes.INVOKESTATIC || opcode == Opcodes.INVOKESPECIAL) {
+                // no virtual call resolution
+                inlineCall(ownerClass, calledMethod, varMap, returnLabel);
+            } else {
+                // virtual call resolution
+                for (Candidate candidate : candidates) {
+                    Label skipLabel = new Label();
+                    super.visitVarInsn(PrimitiveType.ADDRESS.getLoadLocalOpcode(), varMap.get(0));
+                    super.visitTypeInsn(Opcodes.INSTANCEOF, candidate.containingClass.name);
+                    super.visitJumpInsn(Opcodes.IFEQ, skipLabel);
+                    inlineCall(candidate.containingClass, candidate.method, varMap, returnLabel);
+                    super.visitLabel(skipLabel);
+                }
+            }
 
-            // label at the end of the inlined code to return to
-            Label returnLabel = new Label();
+            super.visitLabel(returnLabel);
+        }
 
+        private void inlineCall(ClassNode owner, MethodNode method, Map<Integer, Integer> varMap, Label returnLabel) {
+            varMap = new HashMap<>(varMap);
+
+            recursionDepths.descend(method);
+
+            TypeSpecifier returnType = getReturnType(method);
+            remapLocalVariables(method, varMap);
+            copyOver(method.instructions, varMap, returnLabel, returnType.asPrimitive());
+
+            recursionDepths.ascend(method);
+        }
+
+        private void copyOver(InsnList instructionsToCopy, Map<Integer, Integer> variableMap, Label returnLabel, PrimitiveType returnType) {
             Map<LabelNode, Label> labelMap = new HashMap<>();
 
             Set<Integer> missingVariables = new HashSet<>();
 
-            for (AbstractInsnNode instruction : calledMethod.instructions) {
+            for (AbstractInsnNode instruction : instructionsToCopy) {
                 switch(instruction.getType()) {
                     // need to remap local variables
 
@@ -219,9 +338,6 @@ public class InlineMethods implements Transformation {
                     }
                 }
             }
-
-            super.visitLabel(returnLabel);
-            recursionDepths.ascend(calledMethod);
         }
     }
 }
