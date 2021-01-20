@@ -224,6 +224,12 @@ public class InlineMethods implements Transformation {
                 inlineCall(ownerClass, calledMethod, varMap, returnLabel);
             } else {
                 // virtual call resolution
+                Label nullSkipLabel = new Label();
+                super.visitVarInsn(PrimitiveType.ADDRESS.getLoadLocalOpcode(), varMap.get(0));
+                super.visitJumpInsn(Opcodes.IFNONNULL, nullSkipLabel);
+                emitException("java/lang/NullPointerException");
+                super.visitLabel(nullSkipLabel);
+
                 for (Candidate candidate : candidates) {
                     Label skipLabel = new Label();
                     super.visitVarInsn(PrimitiveType.ADDRESS.getLoadLocalOpcode(), varMap.get(0));
@@ -234,7 +240,23 @@ public class InlineMethods implements Transformation {
                 }
             }
 
+            // throw if none of the candidates matches
+            emitException("java/lang/AssertionError");
+
             super.visitLabel(returnLabel);
+        }
+
+        private void emitException(String type) {
+            super.visitTypeInsn(Opcodes.NEW, type);
+            super.visitInsn(Opcodes.DUP);
+            super.visitMethodInsn(
+                    Opcodes.INVOKESPECIAL,
+                    type,
+                    "<init>",
+                    "()V",
+                    false
+            );
+            super.visitInsn(Opcodes.ATHROW);
         }
 
         private void inlineCall(ClassNode owner, MethodNode method, Map<Integer, Integer> varMap, Label returnLabel) {
