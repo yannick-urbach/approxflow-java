@@ -8,22 +8,43 @@ import java.util.*;
 import static urbachyannick.approxflow.MiscUtil.or;
 import static urbachyannick.approxflow.codetransformation.BytecodeUtil.*;
 
-public class UnrollLoops extends Transformation.PerClassNoExcept {
+public class UnrollLoops extends Transformation.PerClass {
+
+    private final Integer defaultIterations;
+
+    public UnrollLoops(Integer defaultIterations) {
+        this.defaultIterations = defaultIterations;
+    }
 
     @Override
-    protected ClassNode applyToClass(ClassNode sourceClass) {
+    protected ClassNode applyToClass(ClassNode sourceClass) throws InvalidTransformationException {
         ClassNode targetClass = new ClassNode(Opcodes.ASM5);
 
         sourceClass.accept(targetClass);
 
-        Optional<AnnotationNode> classAnnotation = getAnnotation(sourceClass.visibleAnnotations, "Lurbachyannick/approxflow/Unroll;");
-        Optional<Object> classIterations = classAnnotation.flatMap(a -> getAnnotationValue(a, "iterations"));
+        Optional<AnnotationNode> classBlackbox = getAnnotation(sourceClass.visibleAnnotations, "Lurbachyannick/approxflow/BlackboxLoops;");
+        Optional<AnnotationNode> classUnroll = getAnnotation(sourceClass.visibleAnnotations, "Lurbachyannick/approxflow/Unroll;");
+        Optional<Object> classIterations = classUnroll.flatMap(a -> getAnnotationValue(a, "iterations"));
+
+        if (classBlackbox.isPresent() && classUnroll.isPresent())
+            throw new InvalidTransformationException("Can not have both Unroll and BlackboxLoops");
 
         for (MethodNode m : targetClass.methods) {
-            Optional<AnnotationNode> methodAnnotation = getAnnotation(m.visibleAnnotations, "Lurbachyannick/approxflow/Unroll;");
-            Optional<Object> methodIterations = methodAnnotation.flatMap(a -> getAnnotationValue(a, "iterations"));
+            Optional<AnnotationNode> methodBlackbox = getAnnotation(m.visibleAnnotations, "Lurbachyannick/approxflow/BlackboxLoops;");
+            Optional<AnnotationNode> methodUnroll = getAnnotation(m.visibleAnnotations, "Lurbachyannick/approxflow/Unroll;");
+            Optional<Object> methodIterations = methodUnroll.flatMap(a -> getAnnotationValue(a, "iterations"));
 
-            applyToInstructions(m.instructions, or(methodIterations, classIterations).map(i -> (int) i));
+            if (methodBlackbox.isPresent() && methodUnroll.isPresent())
+                throw new InvalidTransformationException("Can not have both Unroll and BlackboxLoops");
+
+            if (methodIterations.isPresent())
+                applyToInstructions(m.instructions, methodIterations.map(i -> (int) i));
+            else if (classIterations.isPresent() && !methodBlackbox.isPresent())
+                applyToInstructions(m.instructions, classIterations.map(i -> (int) i));
+            else if (!methodBlackbox.isPresent() && !classBlackbox.isPresent())
+                applyToInstructions(m.instructions, Optional.ofNullable(defaultIterations));
+            else
+                applyToInstructions(m.instructions, Optional.empty());
         }
 
         return targetClass;

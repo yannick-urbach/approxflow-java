@@ -47,10 +47,10 @@ public class Main implements Runnable {
     @Option(names = {"--keep-intermediate"}, description = "keep intermediate results")
     private boolean keepIntermediate;
 
-    @Option(names = {"--partial-loops"}, description = "passed to jbmc")
+    @Option(names = {"--jbmc-partial-loops"}, description = "passed to jbmc")
     private boolean partialLoops;
 
-    @Option(names = {"--unwind"}, description = "passed to jbmc", paramLabel = "nr", defaultValue = "0")
+    @Option(names = {"--jbmc-unwind"}, description = "passed to jbmc", paramLabel = "nr", defaultValue = "0")
     private int unwind;
 
     @Option(names = {"--eclipse"}, description = "use eclipse java compiler instead of javac")
@@ -61,6 +61,19 @@ public class Main implements Runnable {
 
     @Option(names = {"--program-dir"}, description = "root directory of approxflow-java; filled in by launcher script", paramLabel = "path", defaultValue = "./")
     private Path programRoot;
+
+    @Option(names = {"--inline"}, description = "inline loops with maximum recursion depth nr by default", paramLabel = "nr")
+    private int defaultInlineRecursionDepth;
+
+    @ArgGroup(exclusive = true, multiplicity = "0..1")
+    private LoopHandling loopHandling;
+    private static class LoopHandling {
+        @Option(names = {"--loops-unroll"}, description = "unroll loops with nr iterations by default", paramLabel = "nr", defaultValue = "10")
+        public int defaultUnrollIterations;
+
+        @Option(names = {"--loops-blackbox"}, description = "treat loops as blackboxes by default (not recommended)")
+        public boolean defaultBlackboxLoops;
+    }
 
     // endregion
 
@@ -74,12 +87,21 @@ public class Main implements Runnable {
     public void run() {
         Compiler compiler = eclipse ? new EclipseJavaCompiler() : new Javac();
 
+        if (loopHandling == null) {
+            loopHandling = new LoopHandling();
+            loopHandling.defaultBlackboxLoops = false;
+            loopHandling.defaultUnrollIterations = 10;
+        }
+
         FlowAnalyzer analyzer = new BlackboxSplitter(
                 new Jbmc(partialLoops, unwind),
                 new CounterPicker(
                         new MaxCount(maxcountK),
                         new ApproxMC()
-                )
+                ),
+                defaultInlineRecursionDepth,
+                loopHandling.defaultUnrollIterations,
+                loopHandling.defaultBlackboxLoops
         );
 
         if (!operationMode.testroot.equals(Paths.get("___not_test_mode___")))

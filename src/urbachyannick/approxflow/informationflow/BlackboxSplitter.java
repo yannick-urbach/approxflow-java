@@ -22,11 +22,17 @@ public class BlackboxSplitter implements FlowAnalyzer {
 
     private final List<Transformation> preSplitTransformations;
 
-    public BlackboxSplitter(CnfGenerator cnfGenerator, MaxModelCounter modelCounter) {
+    public BlackboxSplitter(
+            CnfGenerator cnfGenerator,
+            MaxModelCounter modelCounter,
+            int defaultRecursionDepth,
+            int defaultUnrollIterations,
+            boolean defaultBlackboxLoops
+    ) {
         preSplitTransformations = new ArrayList<Transformation>() {{
-            add(new UnrollLoops());
-            add(new InlineMethods());
-            add(new LoopReplacer());
+            add(new UnrollLoops(defaultBlackboxLoops ? null : defaultUnrollIterations));
+            add(new InlineMethods(new InlinePreferences(true, defaultRecursionDepth, false)));
+            add(new LoopReplacer(defaultBlackboxLoops));
             add(new MethodOfInterestTransform());
             add(new AssertToAssume());
             add(new ObjectInvariants());
