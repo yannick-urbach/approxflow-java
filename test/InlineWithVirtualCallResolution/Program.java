@@ -1,6 +1,5 @@
 import urbachyannick.approxflow.*;
 
-@Inline(recursions = 2)
 public class Program {
     @PrivateInput
     public static boolean in() {

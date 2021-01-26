@@ -8,10 +8,19 @@ import urbachyannick.approxflow.javasignatures.*;
 import java.util.*;
 import java.util.stream.*;
 
-import static urbachyannick.approxflow.MiscUtil.or;
 import static urbachyannick.approxflow.codetransformation.BytecodeUtil.*;
 
 public class InlineMethods implements Transformation {
+
+    private final InlinePreferences prefs;
+
+    public InlineMethods() {
+        prefs = new InlinePreferences(false, 3, false);
+    }
+
+    public InlineMethods(InlinePreferences prefs) {
+        this.prefs = prefs;
+    }
 
     @Override
     public Stream<ClassNode> apply(Stream<ClassNode> sourceClasses) throws InvalidTransformationException {
@@ -19,11 +28,8 @@ public class InlineMethods implements Transformation {
 
         try {
             return classList.stream().map(sourceClass -> {
-                Optional<AnnotationNode> annotationNode = getAnnotation(sourceClass.visibleAnnotations, "Lurbachyannick/approxflow/Inline;");
-                Optional<Integer> maxRecursions = annotationNode.flatMap(a -> getAnnotationValue(a, "recursions")).map(v -> (int) v);
-
                 ClassNode targetClass = new ClassNode(Opcodes.ASM5);
-                CV visitor = new CV(classList, maxRecursions, Opcodes.ASM5, targetClass);
+                CV visitor = new CV(sourceClass, classList, Opcodes.ASM5, targetClass);
                 sourceClass.accept(visitor);
 
                 return targetClass;
@@ -45,19 +51,22 @@ public class InlineMethods implements Transformation {
         public void ascend(MethodNode method) { recursionDepths.put(method, get(method) - 1); }
     }
 
-    private static class CV extends ClassVisitor {
+    private class CV extends ClassVisitor {
         private final List<ClassNode> classes;
-        private final Optional<Integer> maxRecursions;
+        private final ClassNode class_;
 
-        public CV(List<ClassNode> classes, Optional<Integer> maxRecursions, int api, ClassVisitor classVisitor) {
+        public CV(ClassNode class_, List<ClassNode> classes, int api, ClassVisitor classVisitor) {
             super(api, classVisitor);
             this.classes = classes;
-            this.maxRecursions = maxRecursions;
+            this.class_ = class_;
         }
 
         @Override
         public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
-            MV visitor = new MV(classes, maxRecursions, api, super.visitMethod(access, name, descriptor, signature, exceptions));
+            MethodNode method = findMethod(class_, class_.name, name, descriptor)
+                    .orElseThrow(() -> new RuntimeInvalidTransformationException("Can not find visited method"));
+
+            MV visitor = new MV(class_, method, classes, api, super.visitMethod(access, name, descriptor, signature, exceptions));
             LocalVariablesSorter sorter = new LocalVariablesSorter(access, descriptor, visitor);
             visitor.sorter = sorter;
             return sorter;
@@ -89,17 +98,19 @@ public class InlineMethods implements Transformation {
         }
     }
 
-    private static class MV extends MethodVisitor {
+    private class MV extends MethodVisitor {
         public LocalVariablesSorter sorter;
         private final RecursionDepthManager recursionDepths;
         private final List<ClassNode> classes;
-        private final Optional<Integer> classMaxRecursions;
+        private final ClassNode class_;
+        private final MethodNode method;
 
-        public MV(List<ClassNode> classes, Optional<Integer> classMaxRecursions, int api, MethodVisitor methodVisitor) {
+        public MV(ClassNode class_, MethodNode method, List<ClassNode> classes, int api, MethodVisitor methodVisitor) {
             super(api, methodVisitor);
             this.classes = classes;
             recursionDepths = new RecursionDepthManager();
-            this.classMaxRecursions = classMaxRecursions;
+            this.class_ = class_;
+            this.method = method;
         }
 
         private void remapAndWriteArguments(boolean hasThis, ClassNode owner, MethodNode method, Map<Integer, Integer> varMap) {
@@ -182,18 +193,21 @@ public class InlineMethods implements Transformation {
 
             Optional<ClassNode> ownerClassOptional = findClass(classes.stream(), owner);
             Optional<MethodNode> calledMethodOptional = ownerClassOptional.flatMap(c -> findMethod(c, owner, name, descriptor));
-            Optional<AnnotationNode> annotationNode = calledMethodOptional.flatMap(m -> getAnnotation(m.visibleAnnotations, "Lurbachyannick/approxflow/Inline;"));
-            Optional<Integer> maxRecursions = or(
-                    annotationNode.flatMap(a -> getAnnotationValue(a, "recursions")).map(v -> (int) v),
-                    classMaxRecursions
+
+            if (!calledMethodOptional.isPresent() || methodBlacklisted(calledMethodOptional.get())) {
+                super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
+                return;
+            }
+
+            InlinePreferences preferences = InlinePreferences.get(
+                    prefs,
+                    ownerClassOptional.get(),
+                    calledMethodOptional.get(),
+                    class_,
+                    method
             );
 
-            if (
-                    !calledMethodOptional.isPresent() ||
-                    methodBlacklisted(calledMethodOptional.get()) ||
-                    !maxRecursions.isPresent() ||
-                    recursionDepths.get(calledMethodOptional.get()) >= maxRecursions.get()
-            ) {
+            if (!preferences.shouldInline() || recursionDepths.get(calledMethodOptional.get()) >= preferences.getRecursions()) {
                 super.visitMethodInsn(opcode, owner, name, descriptor, isInterface);
                 return;
             }
@@ -355,7 +369,7 @@ public class InlineMethods implements Transformation {
                         if (instruction.getOpcode() == returnType.asPrimitive().getReturnOpcode())
                             visitJumpInsn(Opcodes.GOTO, returnLabel);
                         else
-                            instruction.accept(this);
+                            instruction.accept(this); // recurses into this.visitMethodInsn for calls
                         break;
                     }
                 }

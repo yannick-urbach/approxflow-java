@@ -7,6 +7,8 @@ import java.lang.annotation.ElementType;
 
 @Target({ ElementType.TYPE, ElementType.METHOD })
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Inline {
+public @interface InlineCalls {
     int recursions();
+    boolean shouldInline() default true;
+    boolean override() default false;
 }

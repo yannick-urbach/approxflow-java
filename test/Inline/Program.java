@@ -11,7 +11,7 @@ public class Program {
         return true;
     }
 
-    @Inline(recursions = 5)
+    @InlineMethod(recursions = 5)
     public static void inline(int i) {
         if (i <= 0)
             return;
