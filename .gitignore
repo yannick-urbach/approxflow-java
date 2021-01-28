@@ -1,6 +1,3 @@
-# Compiled class file
-*.class
-
 # Log file
 *.log
 
@@ -40,4 +37,3 @@ result.txt
 # do not ignore
 !/res/jbmc-core-models.jar
 !/util/ecj-4.18.jar
-!/res/urbachyannick/approxflow/*.class

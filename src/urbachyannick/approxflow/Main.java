@@ -87,6 +87,7 @@ public class Main implements Runnable {
     @Override
     public void run() {
         Stream<Compiler> compilers = Stream.of(
+                new BytecodeLoader(Stream.of(Paths.get("intermediate"))),
                 new Kotlinc(),
                 eclipse ? new EclipseJavaCompiler() : new Javac()
         );
