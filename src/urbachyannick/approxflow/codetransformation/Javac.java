@@ -6,7 +6,7 @@ import urbachyannick.approxflow.IOCallbacks;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.*;
-import java.util.stream.Stream;
+import java.util.stream.*;
 
 public class Javac implements Compiler {
 
@@ -32,9 +32,15 @@ public class Javac implements Compiler {
             command.add("-d");
             command.add(targetDir.toString());
 
-            Files
+            List<Path> sourceFiles = Files
                     .walk(classpath)
                     .filter(p -> p.toString().endsWith(".java"))
+                    .collect(Collectors.toList());
+
+            if (sourceFiles.size() == 0)
+                return Stream.empty();
+
+            sourceFiles.stream()
                     .map(Path::toString)
                     .forEach(command::add);
 
