@@ -29,13 +29,14 @@ public class MaxCount implements MaxModelCounter {
             throw new ModelCountingException("Can not write temporary CNF file", e);
         }
 
-        Path scalmcPath = ioCallbacks.findInProgramDirectory(Paths.get("util/maxcount/scalmc"));
+        Path linkPath = ioCallbacks.findInProgramDirectory(Paths.get("util/maxcount/scalmc"));
+        boolean createdLink = false;
 
-        if (!Files.exists(scalmcPath)) {
+        if (!Files.exists(linkPath)) {
             try {
-                Path approxmc = FilesUtil.resolveFromPathVariable(Paths.get("approxmc"))
-                        .orElseThrow(() -> new IOException("ApproxMC binary not found"));
-                Files.createSymbolicLink(scalmcPath, approxmc);
+                Path linkTarget = ioCallbacks.findInProgramDirectory(Paths.get("util/maxcount/scalmc-binaries/x86_64-linux/scalmc"));
+                Files.createSymbolicLink(linkPath, linkTarget);
+                createdLink = true;
             } catch (IOException | UnsupportedOperationException e) {
                 throw new ModelCountingException("Failed to link approxmc binary", e);
             }
@@ -62,7 +63,8 @@ public class MaxCount implements MaxModelCounter {
             throw new ModelCountingException("Failed to run SAT solver", e);
         } finally {
             try {
-                Files.deleteIfExists(scalmcPath);
+                if (createdLink)
+                    Files.deleteIfExists(linkPath);
             } catch (IOException e) {
                 e.printStackTrace();
             }
