@@ -39,10 +39,11 @@ public class DefaultAnalyzer implements FlowAnalyzer {
         Scope countVars = getScope(countVarScanners.stream(), classList.stream(), problem);
         Scope maxVars = getScope(maxVarScanners.stream(), classList.stream(), problem);
 
-        if (!countVars.getVariables().findAny().isPresent())
+        MaxModelCountingProblem countingProblem = new MaxModelCountingProblem(problem, countVars, maxVars);
+
+        if (!countingProblem.getCountVars().getVariables().findAny().isPresent())
             return 0;
 
-        MaxModelCountingProblem countingProblem = new MaxModelCountingProblem(problem, countVars, maxVars);
         double solutions = countSolutions(countingProblem, ioCallbacks);
 
         return Math.log(solutions) / Math.log(2);

@@ -5,6 +5,7 @@ import org.objectweb.asm.tree.*;
 import urbachyannick.approxflow.javasignatures.*;
 
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.*;
 
 import static urbachyannick.approxflow.MiscUtil.append;
@@ -75,6 +76,23 @@ public class BytecodeUtil {
 
         return annotations.stream()
                 .anyMatch(a -> a.desc.equals(name));
+    }
+
+    public static void replaceAnnotation(List<AnnotationNode> annotations, String name, Supplier<AnnotationNode> supplier) {
+        if (annotations == null)
+            return;
+
+        for (int i = 0; i < annotations.size(); ++i) {
+            if (annotations.get(i).desc.equals(name))
+                annotations.set(i, supplier.get());
+        }
+    }
+
+    public static void removeAnnotation(List<AnnotationNode> annotations, String name) {
+        if (annotations == null)
+            return;
+
+        annotations.removeIf(a -> a.desc.equals(name));
     }
 
     public static Optional<AnnotationNode> getAnnotation(List<AnnotationNode> annotations, String name) {

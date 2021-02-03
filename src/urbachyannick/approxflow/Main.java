@@ -4,6 +4,7 @@ import org.objectweb.asm.tree.ClassNode;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 import picocli.CommandLine;
+import urbachyannick.approxflow.blackboxes.BlackboxAnalyzer;
 import urbachyannick.approxflow.cnf.Jbmc;
 import urbachyannick.approxflow.codetransformation.Compiler;
 import urbachyannick.approxflow.codetransformation.*;
@@ -98,7 +99,7 @@ public class Main implements Runnable {
             loopHandling.defaultUnrollIterations = 10;
         }
 
-        FlowAnalyzer analyzer = new BlackboxSplitter(
+        FlowAnalyzer analyzer = new BlackboxAnalyzer(
                 new Jbmc(partialLoops, unwind),
                 new CounterPicker(
                         new MaxCount(maxcountK),

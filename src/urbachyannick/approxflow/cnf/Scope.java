@@ -17,4 +17,8 @@ public class Scope {
     public IntStream getVariables() {
         return Arrays.stream(variables);
     }
+
+    public Scope except(Scope other) {
+        return new Scope(getVariables().filter(lhs -> other.getVariables().noneMatch(rhs -> lhs == rhs)));
+    }
 }

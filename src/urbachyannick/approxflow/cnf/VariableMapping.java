@@ -34,6 +34,9 @@ public class VariableMapping {
         if (m1.getSignature() instanceof DynamicArraySignature && m2.getSignature() instanceof DynamicArraySignature)
             return Integer.compare(((DynamicArraySignature) m1.getSignature()).getIndices().getGeneration(), ((DynamicArraySignature) m2.getSignature()).getIndices().getGeneration());
 
+        if (m1.getSignature() instanceof DynamicObjectSignature && m2.getSignature() instanceof DynamicObjectSignature)
+            return Integer.compare(((DynamicObjectSignature) m1.getSignature()).getIndices().getGeneration(), ((DynamicObjectSignature) m2.getSignature()).getIndices().getGeneration());
+
         return 0;
     }
 }

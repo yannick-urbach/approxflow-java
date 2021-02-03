@@ -8,6 +8,9 @@ public abstract class Signature {
             signature = DynamicArraySignature.tryParse(input);
 
         if (signature == null)
+            signature = DynamicObjectSignature.tryParse(input);
+
+        if (signature == null)
             signature = new UnparsedSignature(input);
 
         return signature;

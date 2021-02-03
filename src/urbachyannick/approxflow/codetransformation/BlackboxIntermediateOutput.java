@@ -16,6 +16,7 @@ public class BlackboxIntermediateOutput implements Scanner<IntStream> {
         public int parameterIndex;
         public TypeSpecifier parameterType;
         public List<TypeSpecifier> parameterTypes;
+        public TypeSpecifier returnType;
     }
 
     @Override
@@ -26,6 +27,7 @@ public class BlackboxIntermediateOutput implements Scanner<IntStream> {
                         .filter(m -> hasAnnotation(m.visibleAnnotations, "Lurbachyannick/approxflow/$$BlackboxOutput;"))
                         .flatMap(m -> {
                             List<TypeSpecifier> methodParameterTypes = getArgumentTypes(m).collect(Collectors.toList());
+                            TypeSpecifier methodReturnType = getReturnType(m);
 
                             return IntStream
                                     .range(0, methodParameterTypes.size())
@@ -35,6 +37,7 @@ public class BlackboxIntermediateOutput implements Scanner<IntStream> {
                                                 parameterIndex = i;
                                                 parameterType = methodParameterTypes.get(i);
                                                 parameterTypes = methodParameterTypes;
+                                                returnType = methodReturnType;
                                             }}
                                     );
                         })
@@ -44,7 +47,7 @@ public class BlackboxIntermediateOutput implements Scanner<IntStream> {
                                     new FunctionCall(
                                             parameter.method.name,
                                             parameter.parameterTypes.toArray(new TypeSpecifier[0]),
-                                            PrimitiveType.VOID,
+                                            parameter.returnType,
                                             new AnonymousParameter(parameter.parameterIndex, parameter.parameterType.asPrimitive())
                                     )
                             );

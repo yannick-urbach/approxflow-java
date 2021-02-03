@@ -11,8 +11,10 @@ public class MaxModelCountingProblem {
 
     public MaxModelCountingProblem(MappedProblem problem, Scope countVars, Scope maxVars) {
         this.problem = problem;
-        this.countVars = countVars;
-        this.maxVars = maxVars;
+        this.countVars = countVars.except(maxVars); // exclude count vars that are also in the maximization set
+        this.maxVars = new Scope( // exclude max vars that do not occur in clauses
+                maxVars.getVariables().filter(v -> problem.getProblem().isVariableUsed(v))
+        );
     }
 
     public MappedProblem getMappedProblem() {
