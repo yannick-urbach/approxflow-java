@@ -10,51 +10,79 @@ import java.util.stream.*;
 import static urbachyannick.approxflow.codetransformation.BytecodeUtil.*;
 
 public class JavaVarToCnfVar {
-    public static IntStream variablesForMapping(VariableMapping mapping) {
+    private static IntStream variablesForMapping(VariableMapping mapping) {
         return mapping.getMappingValues()
                 .filter(v -> !v.isTrivial())
                 .mapToInt(v -> ((Literal) v).getVariable());
     }
 
-    public static Stream<VariableMapping> allMappings(VariableTable varTable, Signature signature) {
+    private static Stream<VariableMapping> allMappings(VariableTable varTable, Signature signature) {
         return varTable.getMatching(signature);
     }
 
-    public static VariableMapping lastMapping(VariableTable varTable, Signature signature) throws CnfException {
+    private static Optional<VariableMapping> lastMapping(VariableTable varTable, Signature signature) {
             return varTable
                     .getMatching(signature)
-                    .max(VariableMapping::compareByGeneration)
-                    .orElseThrow(() -> new CnfException("missing variable line for " + signature.toString()));
+                    .max(VariableMapping::compareByGeneration);
     }
 
     public static IntStream variablesForMethodReturnValues(List<ClassNode> classes, VariableTable variableTable, ClassNode owner, MethodNode method, int addressOffset) {
         TypeSpecifier returnType = getReturnType(method);
         TypeSpecifier[] argumentTypes = getArgumentTypes(method).toArray(TypeSpecifier[]::new);
 
-        IntStream.Builder builder = IntStream.builder();
-
         JavaSignature signature = new JavaSignature(
                 ClassName.tryParseFromTypeSpecifier("L" + owner.name + ";", new MutableInteger(0)),
                 new FunctionCall(method.name, argumentTypes, returnType, new ReturnValue())
         );
 
-        Iterator<VariableMapping> roots = JavaVarToCnfVar.allMappings(variableTable, signature).iterator();
-        while (roots.hasNext()) {
-            JavaVarToCnfVar
-                    .cascade(classes, variableTable, roots.next(), returnType, addressOffset)
-                    .forEach(m -> JavaVarToCnfVar.variablesForMapping(m).forEach(builder::add));
-        }
-
-        return builder.build();
+        Stream<VariableMapping> roots = allMappings(variableTable, signature);
+        return roots
+                .flatMap(root -> cascade(classes, variableTable, root, returnType, addressOffset))
+                .flatMapToInt(JavaVarToCnfVar::variablesForMapping);
     }
 
-    public static IntStream variablesForStaticField(VariableTable varTable, Signature signature) {
-        try {
-            return variablesForMapping(lastMapping(varTable, signature));
-        } catch (CnfException e) {
+    public static IntStream variablesForStaticField(List<ClassNode> classes, VariableTable variableTable, ClassNode owner, FieldNode field, int addressOffset) {
+        TypeSpecifier fieldType = getFieldType(field);
+
+        Signature signature = new JavaSignature(
+                ClassName.tryParseFromTypeSpecifier("L" + owner.name + ";", new MutableInteger(0)),
+                new FieldAccess(field.name)
+        );
+
+        Optional<VariableMapping> root = lastMapping(variableTable, signature);
+
+        if (!root.isPresent()) {
             System.err.println("Can not find variable line for " + signature.toString());
             return IntStream.empty();
         }
+
+        return cascade(classes, variableTable, root.get(), fieldType, addressOffset)
+                .flatMapToInt(JavaVarToCnfVar::variablesForMapping);
+    }
+
+    public static IntStream variablesForMethodParameter(List<ClassNode> classes, VariableTable variableTable, ClassNode owner, MethodNode method, int paramIndex, int addressOffset) {
+        TypeSpecifier returnType = getReturnType(method);
+        TypeSpecifier[] argumentTypes = getArgumentTypes(method).toArray(TypeSpecifier[]::new);
+
+        if (paramIndex < 0 || paramIndex >= argumentTypes.length)
+            throw new IndexOutOfBoundsException("paramIndex must be between 0 (inclusive) and the number of parameters (exclusive).");
+
+        TypeSpecifier argumentType = argumentTypes[paramIndex];
+
+        JavaSignature signature = new JavaSignature(
+                ClassName.tryParseFromTypeSpecifier("L" + owner.name + ";", new MutableInteger(0)),
+                new FunctionCall(
+                        method.name,
+                        argumentTypes,
+                        returnType,
+                        new AnonymousParameter(paramIndex, argumentType.asPrimitive())
+                )
+        );
+
+        Stream<VariableMapping> roots = allMappings(variableTable, signature);
+        return roots
+                .flatMap(root -> cascade(classes, variableTable, root, argumentType, addressOffset))
+                .flatMapToInt(JavaVarToCnfVar::variablesForMapping);
     }
 
     private static Stream<VariableMapping> mappingsForArray(VariableTable varTable, long address) {
@@ -67,10 +95,8 @@ public class JavaVarToCnfVar {
                 .collect(Collectors.groupingBy(l -> ((DynamicArraySignature) l.getSignature()).getElementIndex()));
 
         // the last generation of each individual element index
-        Stream<VariableMapping> lastGeneration = elementLines.values().stream()
+        return elementLines.values().stream()
                 .map(l -> l.stream().max(VariableMapping::compareByGeneration).get());
-
-        return lastGeneration;
     }
 
     private static class FieldMapping {
@@ -89,17 +115,20 @@ public class JavaVarToCnfVar {
         for (FieldNode field : class_.fields) {
             DynamicObjectSignature signature = new DynamicObjectSignature(address, field.name);
 
-            try {
-                mappings.add(new FieldMapping(TypeSpecifier.parse(field.desc, new MutableInteger(0)), lastMapping(varTable, signature)));
-            } catch (CnfException e) {
+            Optional<VariableMapping> mapping = lastMapping(varTable, signature);
+
+            if (!mapping.isPresent()) {
                 System.err.println("Can not find variable line for " + signature.toString());
+                break;
             }
+
+            mappings.add(new FieldMapping(TypeSpecifier.parse(field.desc, new MutableInteger(0)), mapping.get()));
         }
 
         return mappings.stream();
     }
 
-    public static Stream<VariableMapping> cascade(List<ClassNode> classes, VariableTable varTable, VariableMapping root, TypeSpecifier type, int addressOffset) {
+    private static Stream<VariableMapping> cascade(List<ClassNode> classes, VariableTable varTable, VariableMapping root, TypeSpecifier type, int addressOffset) {
         if (type.isPrimitive()) {
             return Stream.of(root);
         }
@@ -146,7 +175,7 @@ public class JavaVarToCnfVar {
     }
 
     // Weirdly seems to be in 16 bit words, most significant 16-bit word first, but least significant bit first within words
-    public static long parseAddressFromTrivialLiterals(Stream<TrivialMappingValue> literals) {
+    private static long parseAddressFromTrivialLiterals(Stream<TrivialMappingValue> literals) {
         Iterator<TrivialMappingValue> iterator = literals.iterator();
 
         long result = 0;

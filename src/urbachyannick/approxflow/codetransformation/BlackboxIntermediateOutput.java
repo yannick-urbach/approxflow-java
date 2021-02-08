@@ -22,7 +22,11 @@ public class BlackboxIntermediateOutput implements Scanner<IntStream> {
     @Override
     public IntStream scan(Stream<ClassNode> sourceClasses, MappedProblem problem) {
 
-        return sourceClasses.flatMapToInt(sourceClass ->
+        List<ClassNode> classes = sourceClasses.collect(Collectors.toList());
+
+        int addressOffset = JavaVarToCnfVar.getAddressOffset(classes.stream());
+
+        return classes.stream().flatMapToInt(sourceClass ->
                 sourceClass.methods.stream()
                         .filter(m -> hasAnnotation(m.visibleAnnotations, "Lurbachyannick/approxflow/$$BlackboxOutput;"))
                         .flatMap(m -> {
@@ -41,26 +45,14 @@ public class BlackboxIntermediateOutput implements Scanner<IntStream> {
                                             }}
                                     );
                         })
-                        .flatMapToInt(parameter -> {
-                            JavaSignature signature = new JavaSignature(
-                                    ClassName.tryParseFromTypeSpecifier("L" + sourceClass.name + ";", new MutableInteger(0)),
-                                    new FunctionCall(
-                                            parameter.method.name,
-                                            parameter.parameterTypes.toArray(new TypeSpecifier[0]),
-                                            parameter.returnType,
-                                            new AnonymousParameter(parameter.parameterIndex, parameter.parameterType.asPrimitive())
-                                    )
-                            );
-
-                            return problem
-                                    .getVariableTable()
-                                    .getMatching(signature)
-                                    .flatMapToInt(variable ->
-                                            variable.getMappingValues()
-                                                    .filter(value -> !value.isTrivial())
-                                                    .mapToInt(value -> ((Literal) value).getVariable())
-                                    );
-                        })
+                        .flatMapToInt(parameter -> JavaVarToCnfVar.variablesForMethodParameter(
+                                classes,
+                                problem.getVariableTable(),
+                                sourceClass,
+                                parameter.method,
+                                parameter.parameterIndex,
+                                addressOffset
+                        ))
         );
     }
 }

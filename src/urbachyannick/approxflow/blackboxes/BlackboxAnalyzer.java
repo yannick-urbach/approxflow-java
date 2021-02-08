@@ -45,7 +45,6 @@ public class BlackboxAnalyzer implements FlowAnalyzer {
                 Stream.of(
                         new BlackboxIntermediateOutput(),
                         new OutputVariable(),
-                        new OutputArray(),
                         new ParameterOutputOverApproximated()
                 ),
                 Stream.of(new ReturnValuePublicInput()),

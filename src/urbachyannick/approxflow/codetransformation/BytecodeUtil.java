@@ -114,6 +114,10 @@ public class BytecodeUtil {
         return TypeSpecifier.parse(Type.getReturnType(method.desc).getDescriptor(), new MutableInteger(0));
     }
 
+    public static TypeSpecifier getFieldType(FieldNode field) {
+        return TypeSpecifier.parse(field.desc, new MutableInteger(0));
+    }
+
     public static int invertJumpCondition(int opcode) {
         return jumpInversions.get(opcode);
     }

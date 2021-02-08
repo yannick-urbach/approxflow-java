@@ -2,39 +2,29 @@ package urbachyannick.approxflow.codetransformation;
 
 import org.objectweb.asm.tree.ClassNode;
 import urbachyannick.approxflow.cnf.*;
-import urbachyannick.approxflow.javasignatures.*;
 
+import java.util.List;
 import java.util.stream.*;
 
 public class ParameterOutputOverApproximated implements Scanner<IntStream> {
 
     @Override
     public IntStream scan(Stream<ClassNode> sourceClasses, MappedProblem problem) {
+        List<ClassNode> classes = sourceClasses.collect(Collectors.toList());
 
-        return sourceClasses.flatMapToInt(sourceClass ->
+        int addressOffset = JavaVarToCnfVar.getAddressOffset(classes.stream());
+
+        return classes.stream().flatMapToInt(sourceClass ->
                 ParameterOutput.getOutputParameters(sourceClass)
-                .filter(parameter -> parameter.maxInstances <= 0)
-                .flatMapToInt(parameter -> {
-
-                    JavaSignature signature = new JavaSignature(
-                            ClassName.tryParseFromTypeSpecifier("L" + sourceClass.name + ";", new MutableInteger(0)),
-                            new FunctionCall(
-                                    parameter.method.name,
-                                    parameter.parameterTypes,
-                                    parameter.returnType,
-                                    new AnonymousParameter(parameter.parameterIndex, parameter.parameterType)
-                            )
-                    );
-
-                    return problem
-                            .getVariableTable()
-                            .getMatching(signature)
-                            .flatMapToInt(variable ->
-                                    variable.getMappingValues()
-                                            .filter(value -> !value.isTrivial())
-                                            .mapToInt(value -> ((Literal) value).getVariable())
-                            );
-                })
+                        .filter(parameter -> parameter.maxInstances <= 0)
+                        .flatMapToInt(parameter -> JavaVarToCnfVar.variablesForMethodParameter(
+                                classes,
+                                problem.getVariableTable(),
+                                sourceClass,
+                                parameter.method,
+                                parameter.parameterIndex,
+                                addressOffset
+                        ))
         );
     }
 }

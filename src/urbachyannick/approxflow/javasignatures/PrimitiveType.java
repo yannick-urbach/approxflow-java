@@ -6,16 +6,16 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public enum PrimitiveType implements TypeSpecifier {
-    VOID("Void", 'V', null, 0, false, Opcodes.RETURN, 0, 0, 0, 0),
-    BOOLEAN("Boolean", 'Z', 'z', 1, true, Opcodes.IRETURN, Opcodes.ILOAD, Opcodes.ISTORE, Opcodes.BASTORE, Opcodes.T_BOOLEAN),
-    BYTE("Byte", 'B', 'b', 1, true, Opcodes.IRETURN, Opcodes.ILOAD, Opcodes.ISTORE, Opcodes.BASTORE, Opcodes.T_BYTE),
-    SHORT("Short", 'S', 's', 1, true, Opcodes.IRETURN, Opcodes.ILOAD, Opcodes.ISTORE, Opcodes.SASTORE, Opcodes.T_SHORT),
-    INT("Int", 'I', 'i', 1, true, Opcodes.IRETURN, Opcodes.ILOAD, Opcodes.ISTORE, Opcodes.IASTORE, Opcodes.T_INT),
-    LONG("Long", 'J', 'l', 2, true, Opcodes.LRETURN, Opcodes.LLOAD, Opcodes.LSTORE, Opcodes.LASTORE, Opcodes.T_LONG),
-    FLOAT("Float", 'F', 'f', 1, true, Opcodes.FRETURN, Opcodes.FLOAD, Opcodes.FSTORE, Opcodes.FASTORE, Opcodes.T_FLOAT),
-    DOUBLE("Double", 'D', 'd', 2, true, Opcodes.DRETURN, Opcodes.DLOAD, Opcodes.DSTORE, Opcodes.DASTORE, Opcodes.T_DOUBLE),
-    CHAR("Char", 'C', 'c', 1, true, Opcodes.IRETURN, Opcodes.ILOAD, Opcodes.ISTORE, Opcodes.CASTORE, Opcodes.T_CHAR),
-    ADDRESS(null, null, 'a', 1, false, Opcodes.ARETURN, Opcodes.ALOAD, Opcodes.ASTORE, Opcodes.AASTORE, 0); // weird
+    VOID("Void", 'V', null, 0, false, Opcodes.RETURN, Opcodes.NOP, Opcodes.NOP, Opcodes.NOP, -1, Opcodes.NOP),
+    BOOLEAN("Boolean", 'Z', 'z', 1, true, Opcodes.IRETURN, Opcodes.ILOAD, Opcodes.ISTORE, Opcodes.BASTORE, Opcodes.T_BOOLEAN, Opcodes.ICONST_0),
+    BYTE("Byte", 'B', 'b', 1, true, Opcodes.IRETURN, Opcodes.ILOAD, Opcodes.ISTORE, Opcodes.BASTORE, Opcodes.T_BYTE, Opcodes.ICONST_0),
+    SHORT("Short", 'S', 's', 1, true, Opcodes.IRETURN, Opcodes.ILOAD, Opcodes.ISTORE, Opcodes.SASTORE, Opcodes.T_SHORT, Opcodes.ICONST_0),
+    INT("Int", 'I', 'i', 1, true, Opcodes.IRETURN, Opcodes.ILOAD, Opcodes.ISTORE, Opcodes.IASTORE, Opcodes.T_INT, Opcodes.ICONST_0),
+    LONG("Long", 'J', 'l', 2, true, Opcodes.LRETURN, Opcodes.LLOAD, Opcodes.LSTORE, Opcodes.LASTORE, Opcodes.T_LONG, Opcodes.LCONST_0),
+    FLOAT("Float", 'F', 'f', 1, true, Opcodes.FRETURN, Opcodes.FLOAD, Opcodes.FSTORE, Opcodes.FASTORE, Opcodes.T_FLOAT, Opcodes.FCONST_0),
+    DOUBLE("Double", 'D', 'd', 2, true, Opcodes.DRETURN, Opcodes.DLOAD, Opcodes.DSTORE, Opcodes.DASTORE, Opcodes.T_DOUBLE, Opcodes.DCONST_0),
+    CHAR("Char", 'C', 'c', 1, true, Opcodes.IRETURN, Opcodes.ILOAD, Opcodes.ISTORE, Opcodes.CASTORE, Opcodes.T_CHAR, Opcodes.ICONST_0),
+    ADDRESS(null, null, 'a', 1, false, Opcodes.ARETURN, Opcodes.ALOAD, Opcodes.ASTORE, Opcodes.AASTORE, -1, Opcodes.ACONST_NULL); // weird
 
     private final Character baseType;
     private final Character variableNamePostfix;
@@ -27,6 +27,7 @@ public enum PrimitiveType implements TypeSpecifier {
     private final int arrayStoreOpcode;
     private final int typeOpcode;
     private final int storeLocalOpcode;
+    private final int loadDefaultOpcode;
     private static final Map<Character, PrimitiveType> baseTypeMap;
     private static final Map<Character, PrimitiveType> variableNamePostfixMap;
 
@@ -52,7 +53,8 @@ public enum PrimitiveType implements TypeSpecifier {
             int loadLocalOpcode,
             int storeLocalOpcode,
             int arrayStoreOpcode,
-            int typeOpcode
+            int typeOpcode,
+            int loadDefaultOpcode
     ) {
         this.baseType = baseType;
         this.variableNamePostfix = variableNamePostfix;
@@ -64,6 +66,7 @@ public enum PrimitiveType implements TypeSpecifier {
         this.storeLocalOpcode = storeLocalOpcode;
         this.arrayStoreOpcode = arrayStoreOpcode;
         this.typeOpcode = typeOpcode;
+        this.loadDefaultOpcode = loadDefaultOpcode;
     }
 
     public static PrimitiveType tryParseFromTypeSpecifier(String input, MutableInteger offset) {
@@ -127,5 +130,9 @@ public enum PrimitiveType implements TypeSpecifier {
 
     public int getTypeOpcode() {
         return typeOpcode;
+    }
+
+    public int getLoadDefaultOpcode() {
+        return loadDefaultOpcode;
     }
 }
