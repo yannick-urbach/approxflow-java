@@ -1,6 +1,5 @@
 package urbachyannick.approxflow.cnf;
 
-import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
 import urbachyannick.approxflow.javasignatures.*;
 
@@ -20,7 +19,7 @@ public class JavaVarToCnfVar {
         return varTable.getMatching(signature);
     }
 
-    private static Optional<VariableMapping> lastMapping(VariableTable varTable, Signature signature) {
+    public static Optional<VariableMapping> lastMapping(VariableTable varTable, Signature signature) {
             return varTable
                     .getMatching(signature)
                     .max(VariableMapping::compareByGeneration);
@@ -195,40 +194,5 @@ public class JavaVarToCnfVar {
             throw new IllegalArgumentException("Must have exactly 64 literals");
 
         return result;
-    }
-
-    public static int getAddressOffset(Stream<ClassNode> classes) {
-        return hasAssertionClassInitCode(classes) ? 3 : 0;
-    }
-
-    private static boolean hasAssertionClassInitCode(Stream<ClassNode> classes) {
-        return classes.anyMatch(class_ -> {
-
-            Optional<MethodNode> classInit = findMethod(class_, class_.name, "<clinit>", "()V");
-
-            return classInit.map(i -> {
-
-                for (AbstractInsnNode insn : i.instructions) {
-
-                    if (insn.getType() != AbstractInsnNode.FIELD_INSN)
-
-                        if (insn.getOpcode() != Opcodes.PUTSTATIC)
-                            continue;
-
-                    FieldInsnNode fieldInsn = (FieldInsnNode) insn;
-
-                    if (!fieldInsn.owner.equals(class_.name))
-                        continue;
-
-                    if (!fieldInsn.name.equals("$assertionsDisabled"))
-                        continue;
-
-                    if (fieldInsn.desc.equals("Z"))
-                        return true;
-                }
-
-                return false;
-            }).orElse(false);
-        });
     }
 }

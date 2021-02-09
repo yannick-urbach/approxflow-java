@@ -19,12 +19,18 @@ public class BlackboxIntermediateOutput implements Scanner<IntStream> {
         public TypeSpecifier returnType;
     }
 
+    private final OffsetMarker offsetMarker;
+
+    public BlackboxIntermediateOutput(OffsetMarker offsetMarker) {
+        this.offsetMarker = offsetMarker;
+    }
+
     @Override
     public IntStream scan(Stream<ClassNode> sourceClasses, MappedProblem problem) {
 
         List<ClassNode> classes = sourceClasses.collect(Collectors.toList());
 
-        int addressOffset = JavaVarToCnfVar.getAddressOffset(classes.stream());
+        int addressOffset = offsetMarker.getAddressOffset(problem.getVariableTable());
 
         return classes.stream().flatMapToInt(sourceClass ->
                 sourceClass.methods.stream()

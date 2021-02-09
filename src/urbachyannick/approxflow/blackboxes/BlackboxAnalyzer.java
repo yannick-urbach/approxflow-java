@@ -18,6 +18,7 @@ public class BlackboxAnalyzer implements FlowAnalyzer {
     private final FlowAnalyzer partialAnalyzer;
     private final List<Transformation> preSplitTransformations;
     private final List<FlowConstraintAlgorithm> constraintAlgorithms;
+    private final OffsetMarker offsetMarkerArray;
 
     public BlackboxAnalyzer(
             CnfGenerator cnfGenerator,
@@ -26,11 +27,14 @@ public class BlackboxAnalyzer implements FlowAnalyzer {
             int defaultUnrollIterations,
             boolean defaultBlackboxLoops
     ) {
+        offsetMarkerArray = new OffsetMarker();
+
         preSplitTransformations = new ArrayList<Transformation>() {{
             add(new UnrollLoops(defaultBlackboxLoops ? null : defaultUnrollIterations));
             add(new InlineMethods(new InlinePreferences(true, defaultRecursionDepth, false)));
             add(new LoopReplacer(defaultBlackboxLoops));
             add(new MethodOfInterestTransform());
+            add(offsetMarkerArray);
             add(new AssertToAssume());
             add(new ObjectInvariants());
             add(new AddDummyThrow());
@@ -43,11 +47,11 @@ public class BlackboxAnalyzer implements FlowAnalyzer {
                         new ParameterOutput()
                 ),
                 Stream.of(
-                        new BlackboxIntermediateOutput(),
-                        new OutputVariable(),
-                        new ParameterOutputOverApproximated()
+                        new BlackboxIntermediateOutput(offsetMarkerArray),
+                        new OutputVariable(offsetMarkerArray),
+                        new ParameterOutputOverApproximated(offsetMarkerArray)
                 ),
-                Stream.of(new ReturnValuePublicInput()),
+                Stream.of(new ReturnValuePublicInput(offsetMarkerArray)),
                 modelCounter
         );
 
@@ -59,10 +63,18 @@ public class BlackboxAnalyzer implements FlowAnalyzer {
 
     @Override
     public double analyzeInformationFlow(Stream<ClassNode> classes, IOCallbacks ioCallbacks) {
-        try {
-            return analyzeInformationFlowNoTransformations(transformClasses(classes, preSplitTransformations), ioCallbacks);
-        } catch (InvalidTransformationException e) {
-            throw new Fail("Error during transformation", e);
+        List<ClassNode> classesList = classes.collect(Collectors.toList());
+
+        while (true) {
+            try {
+                return analyzeInformationFlowNoTransformations(transformClasses(classesList.stream(), preSplitTransformations), ioCallbacks);
+            } catch (InvalidTransformationException e) {
+                throw new Fail("Error during transformation", e);
+            } catch (AmbiguousOffsetMarkerException e) {
+                // in the unlikely event that another array has the exact same content as the offset marker, simply restart
+                // noinspection UnnecessaryContinue
+                continue;
+            }
         }
     }
 

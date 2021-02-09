@@ -11,12 +11,18 @@ import static urbachyannick.approxflow.codetransformation.BytecodeUtil.*;
 
 public class ReturnValuePublicInput implements Scanner<IntStream> {
 
+    private final OffsetMarker offsetMarker;
+
+    public ReturnValuePublicInput(OffsetMarker offsetMarker) {
+        this.offsetMarker = offsetMarker;
+    }
+
     @Override
     public IntStream scan(Stream<ClassNode> sourceClasses, MappedProblem problem) {
         List<ClassNode> classList = sourceClasses.collect(Collectors.toList());
         List<IntStream> variableStreams = new ArrayList<>();
 
-        int addressOffset = JavaVarToCnfVar.getAddressOffset(classList.stream());
+        int addressOffset = offsetMarker.getAddressOffset(problem.getVariableTable());
 
         for (ClassNode sourceClass : classList) {
             for (MethodNode sourceMethod : sourceClass.methods) {

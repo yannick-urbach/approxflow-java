@@ -8,11 +8,17 @@ import java.util.stream.*;
 
 public class ParameterOutputOverApproximated implements Scanner<IntStream> {
 
+    private final OffsetMarker offsetMarker;
+
+    public ParameterOutputOverApproximated(OffsetMarker offsetMarker) {
+        this.offsetMarker = offsetMarker;
+    }
+
     @Override
     public IntStream scan(Stream<ClassNode> sourceClasses, MappedProblem problem) {
         List<ClassNode> classes = sourceClasses.collect(Collectors.toList());
 
-        int addressOffset = JavaVarToCnfVar.getAddressOffset(classes.stream());
+        int addressOffset = offsetMarker.getAddressOffset(problem.getVariableTable());
 
         return classes.stream().flatMapToInt(sourceClass ->
                 ParameterOutput.getOutputParameters(sourceClass)
