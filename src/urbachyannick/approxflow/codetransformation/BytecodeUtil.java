@@ -78,6 +78,13 @@ public class BytecodeUtil {
                 .anyMatch(a -> a.desc.equals(name));
     }
 
+    public static boolean anyHasAnnotation(List<AnnotationNode>[] annotations, String name) {
+        if (annotations == null)
+            return false;
+
+        return Arrays.stream(annotations).anyMatch(a -> hasAnnotation(a, name));
+    }
+
     public static void replaceAnnotation(List<AnnotationNode> annotations, String name, Supplier<AnnotationNode> supplier) {
         if (annotations == null)
             return;
@@ -140,6 +147,9 @@ public class BytecodeUtil {
     }
 
     public static Optional<Object> getAnnotationValue(AnnotationNode annotation, String key) {
+        if (annotation.values == null)
+            return Optional.empty();
+
         for (int i = 0; i < annotation.values.size(); i += 2) {
             if (annotation.values.get(i).equals(key))
                 return Optional.ofNullable(annotation.values.get(i + 1));

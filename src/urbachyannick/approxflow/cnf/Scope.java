@@ -7,11 +7,11 @@ public class Scope {
     private final int[] variables;
 
     public Scope(int... variables) {
-        this.variables = Arrays.copyOf(variables, variables.length);
+        this.variables = Arrays.stream(variables).distinct().toArray();
     }
 
     public Scope(IntStream variables) {
-        this.variables = variables.toArray();
+        this.variables = variables.distinct().toArray();
     }
 
     public IntStream getVariables() {

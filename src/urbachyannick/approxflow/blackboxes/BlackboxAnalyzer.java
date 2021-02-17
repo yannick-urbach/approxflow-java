@@ -43,7 +43,9 @@ public class BlackboxAnalyzer implements FlowAnalyzer {
         partialAnalyzer = new DefaultAnalyzer(
                 cnfGenerator,
                 Stream.of(
+                        new CountMaxIOInstances(),
                         new ReturnValueInput(),
+                        new IOOrderOutput(),
                         new ParameterOutput()
                 ),
                 Stream.of(

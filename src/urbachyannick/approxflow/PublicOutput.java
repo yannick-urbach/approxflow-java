@@ -8,5 +8,5 @@ import java.lang.annotation.ElementType;
 @Target({ ElementType.FIELD, ElementType.PARAMETER })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface PublicOutput {
-    int maxInstances() default 16;
+    int maxInstances() default -1;
 }

@@ -7,4 +7,6 @@ import java.lang.annotation.ElementType;
 
 @Target({ ElementType.METHOD, ElementType.PARAMETER })
 @Retention(RetentionPolicy.RUNTIME)
-public @interface PublicInput {}
+public @interface PublicInput {
+    int maxInstances() default -1;
+}

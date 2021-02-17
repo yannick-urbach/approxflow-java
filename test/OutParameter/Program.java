@@ -7,7 +7,7 @@ public class Program {
         return true;
     }
 
-    public static void out(@PublicOutput(maxInstances = 5) boolean value) {
+    public static void out(@PublicOutput boolean value) {
         System.out.println(value);
     }
 
