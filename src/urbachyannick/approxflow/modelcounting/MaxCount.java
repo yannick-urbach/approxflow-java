@@ -77,7 +77,7 @@ public class MaxCount implements MaxModelCounter {
                     .map(pattern::matcher)
                     .filter(Matcher::find)
                     .map(matcher -> {
-                        int multiplier = Integer.parseInt(matcher.group(1));
+                        double multiplier = Double.parseDouble(matcher.group(1));
                         int base = Integer.parseInt(matcher.group(2));
                         int exponent = Integer.parseInt(matcher.group(3));
 
