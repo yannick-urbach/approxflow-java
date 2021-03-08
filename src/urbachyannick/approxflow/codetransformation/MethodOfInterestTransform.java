@@ -5,14 +5,25 @@ import org.objectweb.asm.tree.*;
 import urbachyannick.approxflow.javasignatures.*;
 
 import java.util.*;
-import java.util.stream.Collectors;
+import java.util.stream.*;
 
 import static urbachyannick.approxflow.codetransformation.BytecodeUtil.*;
 
-public class MethodOfInterestTransform extends Transformation.PerClass {
+public class MethodOfInterestTransform implements Transformation {
 
     @Override
-    protected ClassNode applyToClass(ClassNode sourceClass) throws InvalidTransformationException {
+    public Stream<ClassNode> apply(Stream<ClassNode> sourceClasses) throws InvalidTransformationException {
+        Stream.Builder<ClassNode> streamBuilder = Stream.builder();
+
+        List<ClassNode> sourceClassList = sourceClasses.collect(Collectors.toList());
+
+        for (ClassNode sourceClass : sourceClassList)
+            streamBuilder.accept(applyToClass(sourceClass, sourceClassList));
+
+        return streamBuilder.build();
+    }
+
+    protected ClassNode applyToClass(ClassNode sourceClass, List<ClassNode> sourceClasses) throws InvalidTransformationException {
         ClassNode targetClass = new ClassNode(Opcodes.ASM5);
         sourceClass.accept(targetClass); // copy over
 
@@ -42,18 +53,7 @@ public class MethodOfInterestTransform extends Transformation.PerClass {
         // add nondet*() calls for parameters
         for (Type t : Type.getArgumentTypes(method.desc)) {
             TypeSpecifier s = TypeSpecifier.parse(t.getDescriptor(), new MutableInteger(0));
-
-            if (!s.isPrimitive())
-                throw new InvalidTransformationException("Method of interest must only have primitive parameters");
-
-            main.instructions.add(
-                    new MethodInsnNode(
-                            Opcodes.INVOKESTATIC,
-                            "org/cprover/CProver",
-                            "nondet" + s.asPrimitive().getName(),
-                            "()" + s.asTypeSpecifierString()
-                    )
-            );
+            main.instructions.add(Nondet.generateNondetRecursive(s, sourceClasses.stream()));
         }
 
         // add call to method of interest
