@@ -1,5 +1,7 @@
 import urbachyannick.approxflow.*;
 
+@Unroll(iterations = 0)
+@BlackboxLoops
 public class Program {
 
     @PublicOutput

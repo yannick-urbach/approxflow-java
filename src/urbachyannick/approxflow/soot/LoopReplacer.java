@@ -2,7 +2,6 @@ package urbachyannick.approxflow.soot;
 
 import soot.*;
 import soot.jimple.*;
-import soot.jimple.internal.*;
 import soot.tagkit.*;
 import soot.toolkits.graph.*;
 import soot.toolkits.scalar.*;
@@ -16,7 +15,7 @@ import static urbachyannick.approxflow.soot.SootUtil.*;
 
 public class LoopReplacer extends SootTransformation {
 
-    private boolean replaceByDefault;
+    private final boolean replaceByDefault;
     private int methodsGenerated = 0;
 
     public LoopReplacer(boolean replaceByDefault) {
@@ -40,26 +39,21 @@ public class LoopReplacer extends SootTransformation {
             return;
 
         boolean classBlackbox = hasAnnotation(class_.getTags(), "Lurbachyannick/approxflow/BlackboxLoops;");
-        boolean classUnroll = hasAnnotation(class_.getTags(), "Lurbachyannick/approxflow/Unroll;");
-
-        if (classBlackbox && classUnroll)
-            throw new InvalidTransformationException("Can not have both Unroll and BlackboxLoops");
 
         List<SootMethod> methods = new ArrayList<>(class_.getMethods());
 
         for (SootMethod m : methods)
-            apply(m, !classUnroll && (classBlackbox || replaceByDefault), classes);
+            apply(m, classBlackbox || replaceByDefault, classes);
     }
 
-    private void apply(SootMethod method, boolean classBlackbox, List<SootClass> classes) throws InvalidTransformationException {
+    private void apply(SootMethod method, boolean blackbox, List<SootClass> classes) throws InvalidTransformationException {
         if (!method.isConcrete())
             return;
 
         boolean methodBlackbox = hasAnnotation(method.getTags(), "Lurbachyannick/approxflow/BlackboxLoops;");
-        boolean methodUnroll = hasAnnotation(method.getTags(), "Lurbachyannick/approxflow/Unroll;");
 
-        if (methodBlackbox && methodUnroll)
-            throw new InvalidTransformationException("Can not have both Unroll and BlackboxLoops");
+        if (!blackbox && !methodBlackbox)
+            return;
 
         Body body = method.retrieveActiveBody();
 

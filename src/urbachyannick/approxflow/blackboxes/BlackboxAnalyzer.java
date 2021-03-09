@@ -30,7 +30,7 @@ public class BlackboxAnalyzer implements FlowAnalyzer {
         offsetMarkerArray = new OffsetMarker();
 
         preSplitTransformations = new ArrayList<Transformation>() {{
-            add(new UnrollLoops(defaultBlackboxLoops ? null : defaultUnrollIterations));
+            add(new UnrollLoops(defaultUnrollIterations, defaultBlackboxLoops));
             add(new InlineMethods(new InlinePreferences(true, defaultRecursionDepth, false)));
             add(new LoopReplacer(defaultBlackboxLoops));
             add(new MethodOfInterestTransform());

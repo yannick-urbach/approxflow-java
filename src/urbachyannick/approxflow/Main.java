@@ -64,18 +64,14 @@ public class Main implements Runnable {
     @Option(names = {"--program-dir"}, description = "root directory of approxflow-java; filled in by launcher script", paramLabel = "path", defaultValue = "./")
     private Path programRoot;
 
-    @Option(names = {"--inline"}, description = "inline loops with maximum recursion depth nr by default", paramLabel = "nr")
+    @Option(names = {"--inline"}, description = "inline calls with maximum recursion depth nr by default", paramLabel = "nr")
     private int defaultInlineRecursionDepth;
 
-    @ArgGroup(exclusive = true, multiplicity = "0..1")
-    private LoopHandling loopHandling;
-    private static class LoopHandling {
-        @Option(names = {"--loops-unroll"}, description = "unroll loops with nr iterations by default", paramLabel = "nr", defaultValue = "10")
-        public int defaultUnrollIterations;
+    @Option(names = {"--loops-unroll"}, description = "unroll loops with nr iterations by default", paramLabel = "nr", defaultValue = "10")
+    public int defaultUnrollIterations;
 
-        @Option(names = {"--loops-blackbox"}, description = "treat loops as blackboxes by default (not recommended)")
-        public boolean defaultBlackboxLoops;
-    }
+    @Option(names = {"--loops-blackbox"}, description = "treat remaining loops after unrolling as blackboxes by default", defaultValue = "false")
+    public boolean defaultBlackboxLoops;
 
     // endregion
 
@@ -93,12 +89,6 @@ public class Main implements Runnable {
                 eclipse ? new EclipseJavaCompiler() : new Javac()
         );
 
-        if (loopHandling == null) {
-            loopHandling = new LoopHandling();
-            loopHandling.defaultBlackboxLoops = false;
-            loopHandling.defaultUnrollIterations = 10;
-        }
-
         FlowAnalyzer analyzer = new BlackboxAnalyzer(
                 new Jbmc(partialLoops, unwind),
                 new CounterPicker(
@@ -106,8 +96,8 @@ public class Main implements Runnable {
                         new ApproxMC()
                 ),
                 defaultInlineRecursionDepth,
-                loopHandling.defaultUnrollIterations,
-                loopHandling.defaultBlackboxLoops
+                defaultUnrollIterations,
+                defaultBlackboxLoops
         );
 
         if (!operationMode.testroot.equals(Paths.get("___not_test_mode___")))

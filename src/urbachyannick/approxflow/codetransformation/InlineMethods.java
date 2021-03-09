@@ -168,9 +168,6 @@ public class InlineMethods implements Transformation {
             if (hasAnnotation(method.visibleAnnotations, "Lurbachyannick/approxflow/PublicInput;"))
                 return true;
 
-            if (hasAnnotation(method.visibleAnnotations, "Lurbachyannick/approxflow/Blackbox;"))
-                return true;
-
             if (
                     method.visibleParameterAnnotations != null &&
                     Arrays.stream(method.visibleParameterAnnotations)

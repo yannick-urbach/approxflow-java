@@ -5,15 +5,16 @@ import org.objectweb.asm.tree.*;
 
 import java.util.*;
 
-import static urbachyannick.approxflow.MiscUtil.or;
 import static urbachyannick.approxflow.codetransformation.BytecodeUtil.*;
 
 public class UnrollLoops extends Transformation.PerClass {
 
     private final Integer defaultIterations;
+    private final boolean blackboxByDefault;
 
-    public UnrollLoops(Integer defaultIterations) {
+    public UnrollLoops(Integer defaultIterations, boolean blackboxByDefault) {
         this.defaultIterations = defaultIterations;
+        this.blackboxByDefault = blackboxByDefault;
     }
 
     @Override
@@ -26,25 +27,19 @@ public class UnrollLoops extends Transformation.PerClass {
         Optional<AnnotationNode> classUnroll = getAnnotation(sourceClass.visibleAnnotations, "Lurbachyannick/approxflow/Unroll;");
         Optional<Object> classIterations = classUnroll.flatMap(a -> getAnnotationValue(a, "iterations"));
 
-        if (classBlackbox.isPresent() && classUnroll.isPresent())
-            throw new InvalidTransformationException("Can not have both Unroll and BlackboxLoops");
-
         for (MethodNode m : targetClass.methods) {
             Optional<AnnotationNode> methodBlackbox = getAnnotation(m.visibleAnnotations, "Lurbachyannick/approxflow/BlackboxLoops;");
             Optional<AnnotationNode> methodUnroll = getAnnotation(m.visibleAnnotations, "Lurbachyannick/approxflow/Unroll;");
             Optional<Object> methodIterations = methodUnroll.flatMap(a -> getAnnotationValue(a, "iterations"));
 
-            if (methodBlackbox.isPresent() && methodUnroll.isPresent())
-                throw new InvalidTransformationException("Can not have both Unroll and BlackboxLoops");
+            boolean blackbox = blackboxByDefault || classBlackbox.isPresent() || methodBlackbox.isPresent();
 
             if (methodIterations.isPresent())
-                applyToInstructions(m.instructions, methodIterations.map(i -> (int) i));
-            else if (classIterations.isPresent() && !methodBlackbox.isPresent())
-                applyToInstructions(m.instructions, classIterations.map(i -> (int) i));
-            else if (!methodBlackbox.isPresent() && !classBlackbox.isPresent())
-                applyToInstructions(m.instructions, Optional.ofNullable(defaultIterations));
+                applyToInstructions(m.instructions, methodIterations.map(i -> (int) i), blackbox);
+            else if (classIterations.isPresent())
+                applyToInstructions(m.instructions, classIterations.map(i -> (int) i), blackbox);
             else
-                applyToInstructions(m.instructions, Optional.empty());
+                applyToInstructions(m.instructions, Optional.ofNullable(defaultIterations), blackbox);
         }
 
         return targetClass;
@@ -58,7 +53,7 @@ public class UnrollLoops extends Transformation.PerClass {
         return i.owner.equals("urbachyannick/approxflow/Loops") && i.name.equals("unroll");
     }
 
-    private void applyToInstructions(InsnList instructions, Optional<Integer> methodIterations) {
+    private void applyToInstructions(InsnList instructions, Optional<Integer> methodIterations, boolean blackbox) {
         Map<LabelNode, Integer> labels = new HashMap<>();
 
         Optional<Integer> count = methodIterations;
@@ -83,14 +78,26 @@ public class UnrollLoops extends Transformation.PerClass {
                 AbstractInsnNode end = jump;
                 AbstractInsnNode target = jump;
 
+                LabelNode newBackjumpLabel = jump.label;
+
+                if (blackbox)
+                    unrollCount++; // one additional iteration that will be replaced by LoopReplacer
+
                 for (int i = 1; i < unrollCount; ++i) {
                     LabelNode endLabel = BytecodeUtil.copyRange(instructions, start, end, target);
 
                     if (emitJump)
                         instructions.insert(target, new JumpInsnNode(invertedJumpOpcode, endLabel));
 
+                    newBackjumpLabel = new LabelNode();
+                    instructions.insert(target, newBackjumpLabel);
+
                     target = endLabel;
                 }
+
+                // close last iteration to loop to be handled by LoopReplacer
+                if (blackbox)
+                    instructions.insert(target, new JumpInsnNode(jumpOpcode, newBackjumpLabel));
 
                 instructions.remove(jump);
             }
