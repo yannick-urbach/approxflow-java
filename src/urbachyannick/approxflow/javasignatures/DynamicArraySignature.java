@@ -38,7 +38,7 @@ public class DynamicArraySignature extends Signature {
         if (!ParseUtil.checkConstant(input, "[[", offset))
             return null;
 
-        long elementIndex = ParseUtil.parseNumber(input, offset);
+        long elementIndex = ParseUtil.parseHexNumber(input, offset);
 
         if (!ParseUtil.checkConstant(input, "]]", offset))
             return null;
@@ -51,7 +51,7 @@ public class DynamicArraySignature extends Signature {
 
     @Override
     public String toString() {
-        return "symex_dynamic::dynamic_" + address + "_array" + indices + "[[" + elementIndex + "]]";
+        return "symex_dynamic::dynamic_" + address + "_array" + indices + "[[" + Long.toString(elementIndex, 16) + "]]";
     }
 
     public long getAddress() {
