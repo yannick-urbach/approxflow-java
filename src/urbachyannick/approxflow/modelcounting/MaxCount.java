@@ -29,20 +29,6 @@ public class MaxCount implements MaxModelCounter {
             throw new ModelCountingException("Can not write temporary CNF file", e);
         }
 
-        Path linkPath = ioCallbacks.findInProgramDirectory(Paths.get("util/maxcount/scalmc"));
-        boolean createdLink = false;
-
-        if (!Files.exists(linkPath)) {
-            try {
-                Path linkTarget = ioCallbacks.findInProgramDirectory(Paths.get("util/maxcount/scalmc-binaries/x86_64-linux/scalmc"));
-                Files.createSymbolicLink(linkPath, linkTarget);
-                createdLink = true;
-            } catch (IOException | UnsupportedOperationException e) {
-                throw new ModelCountingException("Failed to link approxmc binary", e);
-            }
-        }
-
-
         try {
             ProcessBuilder.Redirect out = ProcessBuilder.Redirect.to(outputPath.toFile());
 
@@ -53,7 +39,7 @@ public class MaxCount implements MaxModelCounter {
                             cnfFilePath.toAbsolutePath().toString(),
                             "" + k
                     )
-                    .directory(ioCallbacks.findInProgramDirectory(Paths.get("util", "maxcount")).toFile())
+                    .directory(ioCallbacks.findInProgramDirectory(Paths.get("util", "meelgroup-maxcount")).toFile())
                     .redirectOutput(out)
                     .redirectError(out)
                     .start()

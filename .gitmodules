@@ -1,3 +1,6 @@
 [submodule "util/maxcount"]
 	path = util/maxcount
 	url = https://github.com/dfremont/maxcount.git
+[submodule "util/meelgroup-maxcount"]
+	path = util/meelgroup-maxcount
+	url = https://github.com/meelgroup/maxcount.git
