@@ -9,6 +9,14 @@ import java.util.regex.*;
 
 public class ApproxMC implements ModelCounter {
 
+    private final double epsilon;
+    private final double delta;
+
+    public ApproxMC(double epsilon, double delta) {
+        this.epsilon = epsilon;
+        this.delta = delta;
+    }
+
     @Override
     public double count(ModelCountingProblem problem, IOCallbacks ioCallbacks) throws ModelCountingException {
         Path cnfFilePath;
@@ -28,7 +36,12 @@ public class ApproxMC implements ModelCounter {
             ProcessBuilder.Redirect out = ProcessBuilder.Redirect.to(outputPath.toFile());
 
             new ProcessBuilder()
-                    .command("approxmc", cnfFilePath.toString())
+                    .command(
+                            "approxmc",
+                            cnfFilePath.toString(),
+                            "--epsilon", Double.toString(epsilon),
+                            "--delta", Double.toString(delta)
+                    )
                     .redirectOutput(out)
                     .redirectError(out)
                     .start()

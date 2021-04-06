@@ -73,6 +73,12 @@ public class Main implements Runnable {
     @Option(names = {"--loops-blackbox"}, description = "treat remaining loops after unrolling as blackboxes by default", defaultValue = "false")
     public boolean defaultBlackboxLoops;
 
+    @Option(names = {"--confidence"}, description = "confidence for the model counters (1 - delta)", defaultValue = "0.8")
+    public double confidence;
+
+    @Option(names = {"--tolerance"}, description = "tolerance for the model counters (epsilon)", defaultValue = "0.8")
+    public double tolerance;
+
     // endregion
 
 
@@ -92,8 +98,8 @@ public class Main implements Runnable {
         FlowAnalyzer analyzer = new BlackboxAnalyzer(
                 new Jbmc(partialLoops, unwind),
                 new CounterPicker(
-                        new MaxCount(maxcountK),
-                        new ApproxMC()
+                        new MaxCount(maxcountK, tolerance, confidence, confidence),
+                        new ApproxMC(tolerance, confidence)
                 ),
                 defaultInlineRecursionDepth,
                 defaultUnrollIterations,
