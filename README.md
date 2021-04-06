@@ -7,16 +7,17 @@
 - Apache Maven
 
 ### Build Instructions
-#### Using the provided build script
-In the project root directory, run
+Clone the repository with submodules:
+
+    $ git clone https://github.com/yannick-urbach/approxflow-java.git
+
+Change into the project directory:
+
+    $ cd approxflow-java
+
+Run the build script:
 
     $ ./build.sh
-    
-#### Using maven directly
-In the project root directory, run
-
-    $ mvn clean compile assembly:single
-
 
 ## Usage
 
@@ -67,5 +68,17 @@ program
 #### --maxcount-k *k*
 Passed as k parameter to MaxCount. Default is 1.
 
-#### --eclipse
-Use the Eclipse Java Compiler instead of javac
+#### --tolerance *t*
+Passed as tolerance (epsilon) to the model counters. Default is 0.8.
+
+#### --confidence *c*
+Passed as confidence (1 - delta) to the model counters. Default is 0.8.
+
+#### --inline *depth*
+Specifies the inlining depth
+
+#### --loops-unroll *iterations*
+Specifies the number of iterations to unroll
+
+#### --loops-blackbox
+Replace aborted loop iterations with blackboxes
