@@ -9,7 +9,7 @@
 ### Build Instructions
 Clone the repository with submodules:
 
-    $ git clone https://github.com/yannick-urbach/approxflow-java.git
+    $ git clone --recursive https://github.com/yannick-urbach/approxflow-java.git
 
 Change into the project directory:
 
